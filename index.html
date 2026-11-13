@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finanças Pessoal - Produção</title>
+    <title>Finanças Pessoal - Produção Supabase</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS para Leitura de Excel (.xlsx / .xls) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Tesseract.js para Leitura Real de Notas Fiscais (OCR) -->
+    <!-- Tesseract.js para OCR Real de Notas Fiscais -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- Supabase JS Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -39,7 +39,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight tracking-wide">Finanças Pessoal</h1>
-                    <span class="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Ambiente de Produção</span>
+                    <span class="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">Supabase Ativo</span>
                 </div>
             </div>
 
@@ -66,9 +66,9 @@
                     <div class="flex items-center gap-2">
                         <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold">FP</div>
                         <div>
-                            <p class="font-semibold text-slate-200">Conta Ativa</p>
+                            <p class="font-semibold text-slate-200">Banco Supabase</p>
                             <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1" id="supabase-status-badge">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Verificando Supabase...
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Conectando nuvem...
                             </p>
                         </div>
                     </div>
@@ -76,8 +76,8 @@
                         <i class="fa-solid fa-rotate text-base"></i>
                     </button>
                 </div>
-                <button type="button" onclick="testSupabaseConnection()" class="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition">
-                    <i class="fa-solid fa-plug-circle-check text-emerald-400"></i> Testar Conexão Supabase
+                <button type="button" onclick="testSupabaseConnection()" class="w-full py-2 px-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition shadow">
+                    <i class="fa-solid fa-plug-circle-check"></i> Reconectar / Testar Supabase
                 </button>
             </div>
         </div>
@@ -91,9 +91,9 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h2 id="page-title" class="text-2xl font-bold text-slate-900">Visão Geral das Finanças</h2>
-                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">Produção</span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">Supabase Nuvem</span>
                 </div>
-                <p class="text-xs text-slate-500 mt-0.5">Sincronização em tempo real com banco de dados na nuvem</p>
+                <p class="text-xs text-slate-500 mt-0.5">Sincronização em tempo real com seu banco PostgreSQL</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-2">
@@ -178,7 +178,7 @@
                             </tr>
                         </thead>
                         <tbody id="dash-transactions-body" class="divide-y divide-slate-100">
-                            <tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Carregando lançamentos do banco de dados...</td></tr>
+                            <tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Carregando dados do Supabase...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -234,17 +234,17 @@
         <section id="tab-ai-assistant" class="space-y-6 hidden">
             <div class="glass-card p-6 rounded-xl space-y-4">
                 <div class="flex items-center justify-between">
-                    <h3 class="font-bold text-slate-800">Assistente Financeiro Inteligente (Análise Real)</h3>
+                    <h3 class="font-bold text-slate-800">Assistente Financeiro Inteligente (Supabase)</h3>
                     <button type="button" onclick="generateRealFinancialInsight()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold">
                         <i class="fa-solid fa-bolt mr-1"></i> Analisar Meus Dados Agora
                     </button>
                 </div>
                 <div class="bg-slate-900 text-slate-100 p-4 rounded-lg h-72 overflow-y-auto text-xs space-y-3" id="ai-chat-box">
                     <p class="text-amber-400 font-semibold">Assistente Finanças Pessoal:</p>
-                    <p>Conectado aos seus lançamentos reais. Clique em <strong>"Analisar Meus Dados Agora"</strong> ou digite uma pergunta abaixo sobre seus gastos, receitas e saldos.</p>
+                    <p>Conectado aos seus lançamentos no Supabase. Clique em <strong>"Analisar Meus Dados Agora"</strong> ou faça perguntas sobre suas finanças.</p>
                 </div>
                 <form onsubmit="handleAiQuestion(event)" class="flex gap-2">
-                    <input type="text" id="ai-user-input" placeholder="Ex: Quanto gastei com alimentação? Qual meu maior gasto?" class="flex-1 p-2.5 border border-slate-300 rounded-lg text-xs">
+                    <input type="text" id="ai-user-input" placeholder="Ex: Quanto gastei com alimentação? Qual meu saldo?" class="flex-1 p-2.5 border border-slate-300 rounded-lg text-xs">
                     <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800">Perguntar</button>
                 </form>
             </div>
@@ -274,14 +274,14 @@
                 <div class="flex justify-end gap-2 pt-2 border-t">
                     <button type="button" onclick="closeModal('minhasEconomiasModal')" class="px-4 py-2 border rounded-lg text-slate-600">Cancelar</button>
                     <button type="button" id="btn-confirm-me-import" disabled onclick="confirmMinhasEconomiasImport()" class="px-4 py-2 bg-teal-600 text-white font-bold rounded-lg opacity-50 cursor-not-allowed transition-all">
-                        <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Gravar no Banco de Produção
+                        <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Gravar no Supabase
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: ESCANEAR NOTA (OCR REAL COM BOTÃO DE CÂMERA DEDICADA) -->
+    <!-- MODAL: ESCANEAR NOTA (OCR REAL) -->
     <div id="scanModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center z-[9999] p-4 overflow-y-auto">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 my-auto">
             <div class="flex justify-between items-center border-b pb-3">
@@ -301,7 +301,6 @@
                             <span class="font-bold">Escolher da Galeria</span>
                         </button>
                     </div>
-                    <!-- Inputs ocultos para captura direta e galeria -->
                     <input type="file" id="scan-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleScanImage(event)">
                     <input type="file" id="scan-file-input" accept="image/*" class="hidden" onchange="handleScanImage(event)">
                 </div>
@@ -317,7 +316,7 @@
                 <form id="scan-review-form" onsubmit="confirmScanSave(event)" class="hidden space-y-3 pt-2 border-t border-slate-200">
                     <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-lg flex items-center gap-2">
                         <i class="fa-solid fa-circle-check text-emerald-600"></i>
-                        <span class="font-medium">Dados extraídos! Confirme o valor e salve:</span>
+                        <span class="font-medium">Dados extraídos com sucesso!</span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -326,14 +325,14 @@
                             <input type="number" step="0.01" id="scan-amount" required class="w-full p-2 border border-slate-300 rounded-lg font-bold text-slate-900 bg-amber-50/40">
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1 text-slate-700">Data da Compra (Competência)</label>
+                            <label class="block font-semibold mb-1 text-slate-700">Data de Competência</label>
                             <input type="date" id="scan-date" required class="w-full p-2 border border-slate-300 rounded-lg">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1 text-slate-700">Data de Pagamento (Caixa)</label>
+                            <label class="block font-semibold mb-1 text-slate-700">Data de Caixa</label>
                             <input type="date" id="scan-date-cash" required class="w-full p-2 border border-slate-300 rounded-lg">
                         </div>
                         <div>
@@ -371,7 +370,7 @@
                     <div class="pt-3 flex justify-end gap-2 border-t">
                         <button type="button" onclick="closeModal('scanModal')" class="px-4 py-2 border rounded-lg text-slate-600">Cancelar</button>
                         <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm">
-                            <i class="fa-solid fa-check mr-1"></i> Salvar Lançamento
+                            <i class="fa-solid fa-check mr-1"></i> Salvar no Supabase
                         </button>
                     </div>
                 </form>
@@ -449,11 +448,11 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                     <div>
-                        <label class="block font-semibold mb-1 text-indigo-800">Data de Caixa (Entrada/Saída)</label>
+                        <label class="block font-semibold mb-1 text-indigo-800">Data de Caixa</label>
                         <input type="date" id="tx-date" required class="w-full p-2 border rounded-lg bg-white">
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1 text-teal-800">Data de Competência (Mês Fato)</label>
+                        <label class="block font-semibold mb-1 text-teal-800">Data de Competência</label>
                         <input type="date" id="tx-date-competence" required class="w-full p-2 border rounded-lg bg-white">
                     </div>
                 </div>
@@ -469,7 +468,7 @@
                 </div>
                 <div class="pt-2 flex justify-end gap-2 border-t">
                     <button type="button" onclick="closeModal('transactionModal')" class="px-4 py-2 border rounded-lg">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg">Salvar no Banco</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg">Salvar no Supabase</button>
                 </div>
             </form>
         </div>
@@ -511,7 +510,7 @@
         </div>
     </div>
 
-    <!-- MODAL: CONFIRMAR LIMPEZA DE LANÇAMENTOS -->
+    <!-- MODAL: LIMPAR LANÇAMENTOS -->
     <div id="clearAllModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center z-[9999] p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
@@ -521,20 +520,19 @@
                 <button type="button" onclick="closeModal('clearAllModal')" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <p class="text-xs text-slate-600 leading-relaxed">
-                Isso apagará os lançamentos importados anteriormente (tanto do aplicativo quanto do banco Supabase) para que você possa cadastrar suas contas e importar a planilha novamente de forma limpa.
+                Isso apagará os lançamentos do aplicativo e do banco Supabase. Deseja prosseguir?
             </p>
-            <div class="pt-2 flex justify-end gap-2 border-t text-xs">
+            <div class="pt-2 flex justify-end gap-2">
                 <button type="button" onclick="closeModal('clearAllModal')" class="px-4 py-2 border rounded-lg text-slate-600">Cancelar</button>
-                <button type="button" id="btn-confirm-clear-all" onclick="clearAllTransactions()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg">
-                    Sim, Limpar Lançamentos
+                <button type="button" id="btn-confirm-clear-all" onclick="clearAllTransactions()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shadow-sm">
+                    Sim, Limpar Tudo
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPT DA APLICAÇÃO EM PRODUÇÃO -->
+    <!-- SCRIPT DE CONEXÃO E LÓGICA DO SUPABASE -->
     <script>
-        // FUNÇÕES GLOBAIS DE NAVEGAÇÃO E MODAIS
         window.openModal = function(id) {
             const m = document.getElementById(id);
             if (m) {
@@ -544,16 +542,16 @@
                     document.getElementById('tx-date-competence').value = today;
                 }
                 if (id === 'transferModal') document.getElementById('tr-date').value = today;
-                m.classList.remove('hidden'); 
-                m.classList.add('flex'); 
+                m.classList.remove('hidden');
+                m.classList.add('flex');
             }
         };
 
         window.closeModal = function(id) {
             const m = document.getElementById(id);
-            if (m) { 
-                m.classList.add('hidden'); 
-                m.classList.remove('flex'); 
+            if (m) {
+                m.classList.add('hidden');
+                m.classList.remove('flex');
             }
         };
 
@@ -586,7 +584,7 @@
             if (tabName === 'accounts') renderAccountsTab();
         };
 
-        // CONEXÃO REAL COM SUPABASE (PRODUÇÃO)
+        // CREDENCIAIS SUPABASE OFICIAIS
         const SUPABASE_URL = 'https://rabdzamnjoionqpmbrgz.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_460QunZsIspGAfQnXLEnGg_jzHWWe0x';
         
@@ -598,18 +596,18 @@
                 });
             }
         } catch(err) {
-            console.error("Erro ao iniciar cliente Supabase:", err);
+            console.error("Erro ao inicializar Supabase:", err);
         }
 
-        const STORAGE_KEY = 'financas_pessoal_prod_v3';
+        const STORAGE_KEY = 'financas_pessoal_supabase_v5';
         let appState = { transactions: [], accounts: [] };
         let pendingMeList = [];
         let pendingMeAccounts = [];
         let catChartInstance = null;
         let flowChartInstance = null;
 
-        function saveDataToStorage() { 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); 
+        function saveDataToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         }
 
         function loadDataFromStorage() {
@@ -653,7 +651,7 @@
                 try {
                     await supabaseClient.from('accounts').insert(newAccountsToInsert);
                 } catch (e) {
-                    console.warn("Aviso ao registrar contas no Supabase:", e);
+                    console.warn("Conta já cadastrada ou erro ao inserir no Supabase:", e);
                 }
             }
         }
@@ -678,18 +676,12 @@
 
         async function loadDataFromSupabase() {
             if (!supabaseClient) return false;
+            const badge = document.getElementById('supabase-status-badge');
+            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span> Sincronizando Supabase...`;
+
             try {
-                // Teste rápido de conectividade com timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-                const { data: accData, error: accErr } = await supabaseClient
-                    .from('accounts')
-                    .select('*')
-                    .abortSignal(controller.signal);
-                
-                clearTimeout(timeoutId);
-
+                // Carregar Contas
+                const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
                 if (!accErr && Array.isArray(accData) && accData.length > 0) {
                     appState.accounts = accData.map(a => ({
                         id: a.id,
@@ -699,11 +691,8 @@
                     }));
                 }
 
-                const { data, error } = await supabaseClient
-                    .from('transactions')
-                    .select('*')
-                    .order('date', { ascending: false });
-
+                // Carregar Lançamentos
+                const { data, error } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
                 if (!error && Array.isArray(data)) {
                     if (data.length > 0) {
                         const detectedAccs = new Set();
@@ -726,32 +715,27 @@
                         await ensureAccountsRegistered(Array.from(detectedAccs));
                         saveDataToStorage();
                     }
-                    const badge = document.getElementById('supabase-status-badge');
-                    if (badge) {
-                        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Produção`;
-                    }
+                    if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Conectado`;
                     return true;
+                } else if (error) {
+                    console.warn("Erro Supabase nas transações:", error.message);
                 }
             } catch(e) {
-                console.log("Falha ao comunicar com Supabase:", e);
+                console.warn("Exceção ao conectar ao Supabase:", e);
             }
-            const badge = document.getElementById('supabase-status-badge');
-            if (badge) {
-                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local / Offline`;
-            }
+
+            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local (Offline)`;
             return false;
         }
 
         window.testSupabaseConnection = async function() {
-            const badge = document.getElementById('supabase-status-badge');
-            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span> Testando conexão...`;
             const ok = await loadDataFromSupabase();
             renderDashboard();
             renderAccountsTab();
             if (ok) {
                 alert("Conexão com o Supabase estabelecida com sucesso!");
             } else {
-                alert("Não foi possível conectar ao Supabase neste momento. Verifique sua internet ou credenciais.");
+                alert("Não foi possível conectar ao Supabase. Verifique se as tabelas 'transactions' e 'accounts' possuem políticas públicas (RLS) habilitadas no seu painel do Supabase.");
             }
         };
 
@@ -769,7 +753,7 @@
                 const { data, error } = await supabaseClient.from('transactions').insert([payload]).select();
                 if (!error && data && data[0]) return data[0].id;
             } catch (e) {
-                console.warn("Aviso ao salvar no Supabase:", e);
+                console.warn("Erro ao gravar no Supabase:", e);
             }
             return null;
         }
@@ -783,17 +767,12 @@
                 try {
                     await supabaseClient.from('transactions').delete().eq('id', id);
                 } catch (e) {
-                    console.warn("Aviso ao excluir do Supabase:", e);
+                    console.warn("Erro ao deletar do Supabase:", e);
                 }
             }
         };
 
         window.clearAllTransactions = async function() {
-            const btn = document.getElementById('btn-confirm-clear-all');
-            const orig = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Limpando...`;
-
             try {
                 if (supabaseClient) {
                     await supabaseClient.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -804,26 +783,17 @@
                 renderDashboard();
                 renderAccountsTab();
             } catch (e) {
-                console.error("Erro ao limpar lançamentos:", e);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = orig;
+                console.error("Erro ao limpar dados:", e);
             }
         };
 
         window.syncAllWithSupabase = async function() {
-            const ok = await loadDataFromSupabase();
+            await loadDataFromSupabase();
             renderDashboard();
             renderAccountsTab();
-            const badge = document.getElementById('supabase-status-badge');
-            if (badge) {
-                badge.innerHTML = ok
-                    ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Produção`
-                    : `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local / Offline`;
-            }
         };
 
-        // LEITURA DE PLANILHAS MINHAS ECONOMIAS (.XLSX / .CSV)
+        // IMPORTADOR MINHAS ECONOMIAS
         window.processMinhasEconomiasFile = function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -983,20 +953,14 @@
                 pendingMeAccounts = accountObjects && accountObjects.length > 0 ? accountObjects : accounts;
 
                 if (pendingMeList.length === 0 && pendingMeAccounts.length === 0) {
-                    document.getElementById('me-summary-text').innerText = `⚠️ Nenhum lançamento ou conta encontrado na planilha.`;
+                    document.getElementById('me-summary-text').innerText = `⚠️ Nenhum dado válido encontrado.`;
                     document.getElementById('me-preview-summary').classList.remove('hidden');
                     return;
                 }
 
-                if (pendingMeList.length === 0 && pendingMeAccounts.length > 0) {
-                    document.getElementById('me-summary-text').innerText = `✅ Planilha de Cadastro de Contas detectada (${pendingMeAccounts.length} contas)!`;
-                    document.getElementById('me-summary-accounts').innerText = `🏦 Contas prontas para criar: ${accounts.join(', ')}`;
-                    document.getElementById('me-summary-balance').innerText = `Soma dos saldos iniciais: R$ ${total.toFixed(2)}`;
-                } else {
-                    document.getElementById('me-summary-text').innerText = `✅ ${pendingMeList.length} lançamentos prontos para gravar!`;
-                    document.getElementById('me-summary-accounts').innerText = `🏦 Contas detectadas (${accounts.length}): ${accounts.join(', ')}`;
-                    document.getElementById('me-summary-balance').innerText = `Impacto líquido no saldo: R$ ${total.toFixed(2)}`;
-                }
+                document.getElementById('me-summary-text').innerText = `✅ ${pendingMeList.length} lançamentos e ${accounts.length} contas detectadas!`;
+                document.getElementById('me-summary-accounts').innerText = `🏦 Contas: ${accounts.join(', ') || 'Nenhuma'}`;
+                document.getElementById('me-summary-balance').innerText = `Impacto líquido: R$ ${total.toFixed(2)}`;
                 document.getElementById('me-preview-summary').classList.remove('hidden');
                 
                 const btn = document.getElementById('btn-confirm-me-import');
@@ -1027,7 +991,66 @@
             }
         };
 
-        // LEITURA REAL DE NOTAS FISCAIS VIA OCR (TESSERACT.JS)
+        window.confirmMinhasEconomiasImport = async function() {
+            if ((!pendingMeList || pendingMeList.length === 0) && (!pendingMeAccounts || pendingMeAccounts.length === 0)) return;
+
+            const btn = document.getElementById('btn-confirm-me-import');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando no Supabase...`;
+
+            try {
+                if (Array.isArray(pendingMeAccounts) && pendingMeAccounts.length > 0) {
+                    if (typeof pendingMeAccounts[0] === 'object') {
+                        await ensureAccountsRegistered(pendingMeAccounts.map(a => a.name));
+                        pendingMeAccounts.forEach(accObj => {
+                            const existing = appState.accounts.find(a => a.name.toLowerCase() === accObj.name.toLowerCase());
+                            if (existing) {
+                                existing.type = accObj.type || existing.type;
+                                existing.initial_balance = Number(accObj.initial_balance) || 0;
+                            }
+                        });
+                        saveDataToStorage();
+                    } else {
+                        await ensureAccountsRegistered(pendingMeAccounts);
+                    }
+                }
+
+                if (supabaseClient && pendingMeList.length > 0) {
+                    const batchSize = 50;
+                    for (let i = 0; i < pendingMeList.length; i += batchSize) {
+                        const chunk = pendingMeList.slice(i, i + batchSize).map(tx => ({
+                            description: tx.desc,
+                            amount: tx.type === 'DESPESA' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
+                            type: tx.type,
+                            category: tx.category,
+                            account: tx.account,
+                            date: tx.dateCash
+                        }));
+                        await supabaseClient.from('transactions').insert(chunk);
+                    }
+                }
+
+                appState.transactions = [...pendingMeList, ...appState.transactions];
+                saveDataToStorage();
+                pendingMeList = [];
+                pendingMeAccounts = [];
+
+                document.getElementById('me-file-input').value = '';
+                document.getElementById('me-preview-summary').classList.add('hidden');
+                closeModal('minhasEconomiasModal');
+                renderDashboard();
+                renderAccountsTab();
+            } catch (err) {
+                console.error("Erro na importação:", err);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
+        // OCR DE NOTAS FISCAIS
         window.handleScanImage = async function(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1040,7 +1063,6 @@
             const progressBar = document.getElementById('scan-progress-bar');
 
             try {
-                // Pré-processamento em alto contraste para melhorar a leitura dos dígitos
                 const processedDataUrl = await new Promise((resolve) => {
                     const img = new Image();
                     img.onload = () => {
@@ -1068,7 +1090,7 @@
                         if (m.status === 'recognizing text' && progressBar) {
                             const pct = Math.round((m.progress || 0) * 100);
                             progressBar.style.width = `${pct}%`;
-                            statusText.innerText = `Lendo valores da nota... ${pct}%`;
+                            statusText.innerText = `Lendo valores... ${pct}%`;
                         }
                     }
                 });
@@ -1076,7 +1098,6 @@
                 const rawText = result.data.text || '';
                 const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
 
-                // Extração de Valor Total
                 let detectedAmount = '';
                 const totalRegex = /(?:TOTAL|PAGAR|VALOR\s*A\s*PAGAR|VALOR\s*TOTAL)[^\d]{0,15}(\d{1,3}(?:[\.,]\d{3})*[\.,]\d{2})/i;
                 const totalMatch = rawText.match(totalRegex);
@@ -1091,14 +1112,12 @@
                     }
                 }
 
-                // Extração de Data
                 let detectedDate = new Date().toISOString().split('T')[0];
                 const dateMatch = rawText.match(/(\d{2})\/(\d{2})\/(20\d{2})/);
                 if (dateMatch) {
                     detectedDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
                 }
 
-                // Extração de Estabelecimento
                 const storeLine = lines.find(l => l.length > 4 && !/CNPJ|CPF|EXTRATO|DANFE|DOCUMENTO|AUXILIAR/i.test(l)) || 'Compra Cupom Fiscal';
 
                 document.getElementById('scan-amount').value = detectedAmount;
@@ -1151,65 +1170,6 @@
             closeModal('scanModal');
             renderDashboard();
             renderAccountsTab();
-        };
-
-        window.confirmMinhasEconomiasImport = async function() {
-            if ((!pendingMeList || pendingMeList.length === 0) && (!pendingMeAccounts || pendingMeAccounts.length === 0)) return;
-
-            const btn = document.getElementById('btn-confirm-me-import');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando registros...`;
-
-            try {
-                if (Array.isArray(pendingMeAccounts) && pendingMeAccounts.length > 0) {
-                    if (typeof pendingMeAccounts[0] === 'object') {
-                        await ensureAccountsRegistered(pendingMeAccounts.map(a => a.name));
-                        pendingMeAccounts.forEach(accObj => {
-                            const existing = appState.accounts.find(a => a.name.toLowerCase() === accObj.name.toLowerCase());
-                            if (existing) {
-                                existing.type = accObj.type || existing.type;
-                                existing.initial_balance = Number(accObj.initial_balance) || 0;
-                            }
-                        });
-                        saveDataToStorage();
-                    } else {
-                        await ensureAccountsRegistered(pendingMeAccounts);
-                    }
-                }
-
-                if (supabaseClient && pendingMeList.length > 0) {
-                    const batchSize = 50;
-                    for (let i = 0; i < pendingMeList.length; i += batchSize) {
-                        const chunk = pendingMeList.slice(i, i + batchSize).map(tx => ({
-                            description: tx.desc,
-                            amount: tx.type === 'DESPESA' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
-                            type: tx.type,
-                            category: tx.category,
-                            account: tx.account,
-                            date: tx.dateCash
-                        }));
-                        await supabaseClient.from('transactions').insert(chunk);
-                    }
-                }
-
-                appState.transactions = [...pendingMeList, ...appState.transactions];
-                saveDataToStorage();
-                pendingMeList = [];
-                pendingMeAccounts = [];
-
-                document.getElementById('me-file-input').value = '';
-                document.getElementById('me-preview-summary').classList.add('hidden');
-                closeModal('minhasEconomiasModal');
-                renderDashboard();
-                renderAccountsTab();
-            } catch (err) {
-                console.error("Erro na importação:", err);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-            }
         };
 
         window.handleSaveTransaction = async function(e) {
@@ -1354,11 +1314,10 @@
             if (elExp) elExp.innerText = formatBRL(totalExpenseComp);
             if (elCnt) elCnt.innerText = `${txs.length} lançamentos`;
 
-            // Renderizar Tabela Resumida (Dashboard)
             const dashBody = document.getElementById('dash-transactions-body');
             if (dashBody) {
                 if (txs.length === 0) {
-                    dashBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado ainda. Importe uma planilha ou crie um novo lançamento.</td></tr>`;
+                    dashBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado no Supabase.</td></tr>`;
                 } else {
                     dashBody.innerHTML = txs.slice(0, 10).map(t => {
                         const isPositive = t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA';
@@ -1382,7 +1341,6 @@
                 }
             }
 
-            // Renderizar Tabela Completa (Aba Lançamentos)
             const fullBody = document.getElementById('full-transactions-body');
             if (fullBody) {
                 const query = (document.getElementById('tx-search-input')?.value || '').toLowerCase();
@@ -1437,9 +1395,7 @@
                             labels: labels.length ? labels : ['Sem despesas'],
                             datasets: [{
                                 data: values.length ? values : [1],
-                                backgroundColor: labels.length
-                                    ? ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#14b8a6', '#8b5cf6', '#ec4899', '#64748b']
-                                    : ['#e2e8f0']
+                                backgroundColor: labels.length ? ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#14b8a6', '#8b5cf6', '#ec4899', '#64748b'] : ['#e2e8f0']
                             }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } }
@@ -1464,7 +1420,7 @@
                     });
                 }
             } catch (err) {
-                console.warn("Aviso ao atualizar gráficos:", err);
+                console.warn("Erro gráficos:", err);
             }
         }
 
@@ -1494,7 +1450,7 @@
 
             const names = Object.keys(balances);
             if (names.length === 0) {
-                grid.innerHTML = `<div class="col-span-full glass-card p-8 rounded-xl text-center text-slate-400 text-xs">Nenhuma conta cadastrada ainda. Clique em "+ Nova Conta / Cartão" ou importe sua planilha.</div>`;
+                grid.innerHTML = `<div class="col-span-full glass-card p-8 rounded-xl text-center text-slate-400 text-xs">Nenhuma conta cadastrada.</div>`;
                 return;
             }
 
@@ -1521,12 +1477,11 @@
             }).join('');
         }
 
-        // ASSISTENTE IA SOBRE DADOS REAIS
         window.generateRealFinancialInsight = function() {
             const box = document.getElementById('ai-chat-box');
             const txs = appState.transactions || [];
             if (txs.length === 0) {
-                box.innerHTML += `<p class="text-slate-300 mt-2">Ainda não há lançamentos registrados para analisar. Importe sua planilha ou registre uma movimentação.</p>`;
+                box.innerHTML += `<p class="text-slate-300 mt-2">Sem lançamentos para analisar.</p>`;
                 return;
             }
             let inc = 0, exp = 0;
@@ -1541,11 +1496,11 @@
             const topCat = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
             box.innerHTML += `
                 <div class="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-700">
-                    <p class="text-emerald-400 font-bold">Resumo Financeiro Atual:</p>
-                    <p>• Total de Receitas: <strong>${formatBRL(inc)}</strong></p>
-                    <p>• Total de Despesas: <strong>${formatBRL(exp)}</strong></p>
-                    <p>• Resultado por Competência: <strong>${formatBRL(inc - exp)}</strong></p>
-                    ${topCat ? `<p>• Maior categoria de gasto: <strong>${topCat[0]}</strong> (${formatBRL(topCat[1])})</p>` : ''}
+                    <p class="text-emerald-400 font-bold">Análise do Supabase:</p>
+                    <p>• Receitas Totais: <strong>${formatBRL(inc)}</strong></p>
+                    <p>• Despesas Totais: <strong>${formatBRL(exp)}</strong></p>
+                    <p>• Saldo Competência: <strong>${formatBRL(inc - exp)}</strong></p>
+                    ${topCat ? `<p>• Maior gasto: <strong>${topCat[0]}</strong> (${formatBRL(topCat[1])})</p>` : ''}
                 </div>
             `;
             box.scrollTop = box.scrollHeight;
@@ -1569,23 +1524,20 @@
 
             if (matches.length > 0) {
                 const sum = matches.reduce((acc, t) => acc + (t.type === 'DESPESA' ? -t.amount : t.amount), 0);
-                box.innerHTML += `<p class="text-slate-200">Encontrei <strong>${matches.length}</strong> lançamentos relacionados a "${q}", somando <strong>${formatBRL(Math.abs(sum))}</strong>.</p>`;
+                box.innerHTML += `<p class="text-slate-200">Encontrei <strong>${matches.length}</strong> itens sobre "${q}", totalizando <strong>${formatBRL(Math.abs(sum))}</strong>.</p>`;
             } else {
                 generateRealFinancialInsight();
             }
             box.scrollTop = box.scrollHeight;
         };
 
-        // INICIALIZAÇÃO SEGURA AO CARREGAR A PÁGINA
         window.addEventListener('DOMContentLoaded', async () => {
-            try {
-                loadDataFromStorage();
-                renderDashboard();
-                renderAccountsTab();
-                await syncAllWithSupabase();
-            } catch (err) {
-                console.error("Erro na inicialização:", err);
-            }
+            loadDataFromStorage();
+            renderDashboard();
+            renderAccountsTab();
+            await loadDataFromSupabase();
+            renderDashboard();
+            renderAccountsTab();
         });
     </script>
 </body>
