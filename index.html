@@ -690,7 +690,57 @@
             }
             return false;
         }
-// ... existing code ... -->
+
+        async function saveTransactionToSupabase(txObj) {
+            if (!supabaseClient) return null;
+            try {
+                const payload = {
+                    description: txObj.desc,
+                    amount: (txObj.type === 'DESPESA' || txObj.type === 'TRANSFERENCIA_SAIDA') ? -Math.abs(txObj.amount) : Math.abs(txObj.amount),
+                    type: txObj.type,
+                    category: txObj.category,
+                    account: txObj.account,
+                    date: txObj.dateCash
+                };
+                const { data, error } = await supabaseClient.from('transactions').insert([payload]).select();
+                if (!error && data && data[0]) return data[0].id;
+            } catch (e) {
+                console.warn("Aviso ao salvar no Supabase:", e);
+            }
+            return null;
+        }
+
+        window.deleteTransaction = async function(id) {
+            appState.transactions = appState.transactions.filter(t => String(t.id) !== String(id));
+            saveDataToStorage();
+            renderDashboard();
+            renderAccountsTab();
+            if (supabaseClient && id) {
+                try {
+                    await supabaseClient.from('transactions').delete().eq('id', id);
+                } catch (e) {
+                    console.warn("Aviso ao excluir do Supabase:", e);
+                }
+            }
+        };
+
+        window.syncAllWithSupabase = async function() {
+            const ok = await loadDataFromSupabase();
+            renderDashboard();
+            renderAccountsTab();
+            const badge = document.getElementById('supabase-status-badge');
+            if (badge) {
+                badge.innerHTML = ok
+                    ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sincronizado Agora`
+                    : `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local / Offline`;
+            }
+        };
+
+        // LEITURA DE PLANILHAS MINHAS ECONOMIAS (.XLSX / .CSV)
+        window.processMinhasEconomiasFile = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
             const parseGenericRows = (matrixRows) => {
                 if (!matrixRows || matrixRows.length === 0) return { items: [], total: 0, accounts: [] };
                 let parsedItems = [];
@@ -823,88 +873,207 @@
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.classList.add('hover:bg-teal-700', 'shadow-md');
             };
-// ... existing code ... -->
-        window.confirmMinhasEconomiasImport = async function() {
-            if (!pendingMeList || pendingMeList.length === 0) return;
-            const btn = document.getElementById('btn-confirm-me-import');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando contas e lançamentos...`;
-            btn.disabled = true;
 
-            await ensureAccountsRegistered(pendingMeAccounts);
-
-            if (supabaseClient) {
-                const payload = pendingMeList.map(tx => ({
-                    description: tx.desc,
-                    amount: tx.type === 'DESPESA' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
-                    type: tx.type,
-                    category: tx.category,
-                    account: tx.account,
-                    date: tx.dateCash
-                }));
-                await supabaseClient.from('transactions').insert(payload);
+            const reader = new FileReader();
+            if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    handleParsedResult(matrix);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                    const sep = lines[0] && lines[0].includes(';') ? ';' : ',';
+                    const matrix = lines.map(l => l.split(sep).map(c => c.replace(/^"|"$/g, '').trim()));
+                    handleParsedResult(matrix);
+                };
+                reader.readAsText(file, 'UTF-8');
             }
-
-            appState.transactions = pendingMeList.concat(appState.transactions);
-            saveDataToStorage();
-            closeModal('minhasEconomiasModal');
-            renderDashboard();
-            renderAccountsTab();
         };
 
-        // TRANSFERÊNCIA (NEUTRA EM RECEITAS/DESPESAS CONFORME PROMPT MESTRE)
-        window.handleSaveTransfer = async function(e) {
+        // LEITURA REAL DE NOTAS FISCAIS VIA OCR (TESSERACT.JS)
+        window.handleScanImage = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('scan-upload-box').classList.add('hidden');
+            document.getElementById('scan-loading').classList.remove('hidden');
+            document.getElementById('scan-review-form').classList.add('hidden');
+
+            const statusText = document.getElementById('scan-status-text');
+            const progressBar = document.getElementById('scan-progress-bar');
+
+            try {
+                // Pré-processamento em alto contraste para melhorar a leitura dos dígitos
+                const processedDataUrl = await new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const scale = Math.min(2, 1600 / Math.max(img.width, img.height));
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const d = imgData.data;
+                        for (let i = 0; i < d.length; i += 4) {
+                            const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                            const contrast = gray > 135 ? 255 : (gray < 85 ? 0 : gray);
+                            d[i] = d[i + 1] = d[i + 2] = contrast;
+                        }
+                        ctx.putImageData(imgData, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.src = URL.createObjectURL(file);
+                });
+
+                const result = await Tesseract.recognize(processedDataUrl, 'por', {
+                    logger: m => {
+                        if (m.status === 'recognizing text' && progressBar) {
+                            const pct = Math.round((m.progress || 0) * 100);
+                            progressBar.style.width = `${pct}%`;
+                            statusText.innerText = `Lendo valores da nota... ${pct}%`;
+                        }
+                    }
+                });
+
+                const rawText = result.data.text || '';
+                const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+
+                // Extração de Valor Total
+                let detectedAmount = '';
+                const totalRegex = /(?:TOTAL|PAGAR|VALOR\s*A\s*PAGAR|VALOR\s*TOTAL)[^\d]{0,15}(\d{1,3}(?:[\.,]\d{3})*[\.,]\d{2})/i;
+                const totalMatch = rawText.match(totalRegex);
+                if (totalMatch && totalMatch[1]) {
+                    detectedAmount = parseFloat(totalMatch[1].replace(/\./g, '').replace(',', '.')).toFixed(2);
+                } else {
+                    const allNumbers = [...rawText.matchAll(/(\d{1,4}[\.,]\d{2})/g)]
+                        .map(m => parseFloat(m[1].replace(',', '.')))
+                        .filter(n => !isNaN(n) && n > 0 && n < 50000);
+                    if (allNumbers.length > 0) {
+                        detectedAmount = Math.max(...allNumbers).toFixed(2);
+                    }
+                }
+
+                // Extração de Data
+                let detectedDate = new Date().toISOString().split('T')[0];
+                const dateMatch = rawText.match(/(\d{2})\/(\d{2})\/(20\d{2})/);
+                if (dateMatch) {
+                    detectedDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+                }
+
+                // Extração de Estabelecimento
+                const storeLine = lines.find(l => l.length > 4 && !/CNPJ|CPF|EXTRATO|DANFE|DOCUMENTO|AUXILIAR/i.test(l)) || 'Compra Cupom Fiscal';
+
+                document.getElementById('scan-amount').value = detectedAmount;
+                document.getElementById('scan-date').value = detectedDate;
+                document.getElementById('scan-date-cash').value = detectedDate;
+                document.getElementById('scan-desc').value = storeLine.slice(0, 60);
+            } catch (err) {
+                console.error("Erro no OCR:", err);
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('scan-date').value = today;
+                document.getElementById('scan-date-cash').value = today;
+                document.getElementById('scan-desc').value = 'Compra Nota Fiscal';
+            } finally {
+                document.getElementById('scan-loading').classList.add('hidden');
+                document.getElementById('scan-review-form').classList.remove('hidden');
+            }
+        };
+
+        window.confirmScanSave = async function(e) {
             e.preventDefault();
-            const amount = parseFloat(document.getElementById('tr-amount').value);
-            const from = document.getElementById('tr-from').value.trim();
-            const to = document.getElementById('tr-to').value.trim();
-            const dateCash = document.getElementById('tr-date').value || new Date().toISOString().split('T')[0];
+            const amount = parseFloat(document.getElementById('scan-amount').value);
+            const dateCompetence = document.getElementById('scan-date').value;
+            const dateCash = document.getElementById('scan-date-cash').value || dateCompetence;
+            const status = document.getElementById('scan-status').value || 'REALIZADO';
+            const desc = document.getElementById('scan-desc').value.trim();
+            const category = document.getElementById('scan-category').value;
+            const account = document.getElementById('scan-account').value.trim() || 'Cartão de Crédito';
 
             if (isNaN(amount) || amount <= 0) return;
 
-            await ensureAccountsRegistered([from, to]);
+            await ensureAccountsRegistered([account]);
 
-            const txOut = {
-                id: Date.now().toString() + '_out',
+            const newTx = {
+                id: Date.now().toString(),
                 dateCash,
-                dateCompetence: dateCash,
-                status: 'REALIZADO',
-                desc: `Transferência enviada para ${to}`,
-                category: 'Transferência',
-                account: from,
-                type: 'TRANSFERENCIA_SAIDA',
+                dateCompetence,
+                status,
+                desc,
+                category,
+                account,
+                type: 'DESPESA',
                 amount
             };
 
-            const txIn = {
-                id: Date.now().toString() + '_in',
-                dateCash,
-                dateCompetence: dateCash,
-                status: 'REALIZADO',
-                desc: `Transferência recebida de ${from}`,
-                category: 'Transferência',
-                account: to,
-                type: 'TRANSFERENCIA_ENTRADA',
-                amount
-            };
+            const dbId = await saveTransactionToSupabase(newTx);
+            if (dbId) newTx.id = dbId;
 
-            await saveTransactionToSupabase(txOut);
-            await saveTransactionToSupabase(txIn);
-
-            appState.transactions.unshift(txIn, txOut);
+            appState.transactions.unshift(newTx);
             saveDataToStorage();
-            closeModal('transferModal');
+            closeModal('scanModal');
             renderDashboard();
             renderAccountsTab();
         };
 
-        // NOVO LANÇAMENTO
+        window.confirmMinhasEconomiasImport = async function() {
+            if (!pendingMeList || pendingMeList.length === 0) return;
+
+            const btn = document.getElementById('btn-confirm-me-import');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando ${pendingMeList.length} registros...`;
+
+            try {
+                await ensureAccountsRegistered(pendingMeAccounts);
+
+                if (supabaseClient) {
+                    const batchSize = 50;
+                    for (let i = 0; i < pendingMeList.length; i += batchSize) {
+                        const chunk = pendingMeList.slice(i, i + batchSize).map(tx => ({
+                            description: tx.desc,
+                            amount: tx.type === 'DESPESA' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
+                            type: tx.type,
+                            category: tx.category,
+                            account: tx.account,
+                            date: tx.dateCash
+                        }));
+                        await supabaseClient.from('transactions').insert(chunk);
+                    }
+                }
+
+                appState.transactions = [...pendingMeList, ...appState.transactions];
+                saveDataToStorage();
+                pendingMeList = [];
+                pendingMeAccounts = [];
+
+                document.getElementById('me-file-input').value = '';
+                document.getElementById('me-preview-summary').classList.add('hidden');
+                closeModal('minhasEconomiasModal');
+                renderDashboard();
+                renderAccountsTab();
+            } catch (err) {
+                console.error("Erro na importação:", err);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        };
+
         window.handleSaveTransaction = async function(e) {
             e.preventDefault();
             const type = document.getElementById('tx-type').value;
-            const status = document.getElementById('tx-status').value || 'REALIZADO';
             const amount = parseFloat(document.getElementById('tx-amount').value);
+            const status = document.getElementById('tx-status').value || 'REALIZADO';
             const desc = document.getElementById('tx-desc').value.trim();
-            const dateCash = document.getElementById('tx-date').value || new Date().toISOString().split('T')[0];
+            const dateCash = document.getElementById('tx-date').value;
             const dateCompetence = document.getElementById('tx-date-competence').value || dateCash;
             const category = document.getElementById('tx-category').value.trim() || 'Geral';
             const account = document.getElementById('tx-account').value.trim() || 'Conta Principal';
@@ -930,286 +1099,349 @@
 
             appState.transactions.unshift(newTx);
             saveDataToStorage();
+            document.getElementById('tx-form').reset();
             closeModal('transactionModal');
             renderDashboard();
             renderAccountsTab();
         };
 
-        // RENDERIZAÇÃO CONTAS (CONSIDERA CONTAS CADASTRADAS + CAIXA REALIZADO)
+        window.handleSaveTransfer = async function(e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('tr-amount').value);
+            const dateCash = document.getElementById('tr-date').value;
+            const fromAcc = document.getElementById('tr-from').value.trim();
+            const toAcc = document.getElementById('tr-to').value.trim();
+
+            if (isNaN(amount) || amount <= 0 || !fromAcc || !toAcc) return;
+
+            await ensureAccountsRegistered([fromAcc, toAcc]);
+
+            const outTx = {
+                id: (Date.now() + 1).toString(),
+                dateCash,
+                dateCompetence: dateCash,
+                status: 'REALIZADO',
+                desc: `Transferência para ${toAcc}`,
+                category: 'Transferência',
+                account: fromAcc,
+                type: 'TRANSFERENCIA_SAIDA',
+                amount
+            };
+
+            const inTx = {
+                id: (Date.now() + 2).toString(),
+                dateCash,
+                dateCompetence: dateCash,
+                status: 'REALIZADO',
+                desc: `Transferência de ${fromAcc}`,
+                category: 'Transferência',
+                account: toAcc,
+                type: 'TRANSFERENCIA_ENTRADA',
+                amount
+            };
+
+            await saveTransactionToSupabase(outTx);
+            await saveTransactionToSupabase(inTx);
+
+            appState.transactions.unshift(inTx, outTx);
+            saveDataToStorage();
+            closeModal('transferModal');
+            renderDashboard();
+            renderAccountsTab();
+        };
+
+        function formatBRL(val) {
+            return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatDateBR(isoStr) {
+            if (!isoStr || !isoStr.includes('-')) return isoStr || '-';
+            const [y, m, d] = isoStr.slice(0, 10).split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function renderDashboard() {
+            const txs = appState.transactions || [];
+            const initialSum = (appState.accounts || []).reduce((acc, a) => acc + (Number(a.initial_balance) || 0), 0);
+
+            let realizedCash = initialSum;
+            let projectedCash = initialSum;
+            let totalIncomeComp = 0;
+            let totalExpenseComp = 0;
+            const catTotals = {};
+
+            txs.forEach(t => {
+                const val = Number(t.amount) || 0;
+                const isRealized = (t.status || 'REALIZADO') === 'REALIZADO';
+
+                if (t.type === 'RECEITA') {
+                    totalIncomeComp += val;
+                    projectedCash += val;
+                    if (isRealized) realizedCash += val;
+                } else if (t.type === 'DESPESA') {
+                    totalExpenseComp += val;
+                    projectedCash -= val;
+                    if (isRealized) realizedCash -= val;
+                    const cat = t.category || 'Outros';
+                    catTotals[cat] = (catTotals[cat] || 0) + val;
+                } else if (t.type === 'TRANSFERENCIA_ENTRADA') {
+                    projectedCash += val;
+                    if (isRealized) realizedCash += val;
+                } else if (t.type === 'TRANSFERENCIA_SAIDA') {
+                    projectedCash -= val;
+                    if (isRealized) realizedCash -= val;
+                }
+            });
+
+            const competenceBalance = totalIncomeComp - totalExpenseComp;
+
+            const elTotal = document.getElementById('dash-total-balance');
+            const elProj = document.getElementById('dash-projected-cash');
+            const elComp = document.getElementById('dash-competence-balance');
+            const elInc = document.getElementById('dash-income');
+            const elExp = document.getElementById('dash-expense');
+            const elCnt = document.getElementById('dash-count');
+
+            if (elTotal) elTotal.innerText = formatBRL(realizedCash);
+            if (elProj) elProj.innerText = formatBRL(projectedCash);
+            if (elComp) elComp.innerText = formatBRL(competenceBalance);
+            if (elInc) elInc.innerText = formatBRL(totalIncomeComp);
+            if (elExp) elExp.innerText = formatBRL(totalExpenseComp);
+            if (elCnt) elCnt.innerText = `${txs.length} lançamentos`;
+
+            // Renderizar Tabela Resumida (Dashboard)
+            const dashBody = document.getElementById('dash-transactions-body');
+            if (dashBody) {
+                if (txs.length === 0) {
+                    dashBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado ainda. Importe uma planilha ou crie um novo lançamento.</td></tr>`;
+                } else {
+                    dashBody.innerHTML = txs.slice(0, 10).map(t => {
+                        const isPositive = t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA';
+                        const colorClass = t.type.startsWith('TRANSFERENCIA') ? 'text-amber-600' : (isPositive ? 'text-emerald-600' : 'text-rose-600');
+                        const sign = isPositive ? '+' : '-';
+                        return `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 whitespace-nowrap">
+                                    <div class="font-medium text-slate-800">${formatDateBR(t.dateCash)}</div>
+                                    <div class="text-[10px] text-slate-400">Comp: ${formatDateBR(t.dateCompetence)}</div>
+                                </td>
+                                <td class="p-3 font-medium text-slate-800">${t.desc}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 bg-slate-100 rounded text-[11px]">${t.category}</span></td>
+                                <td class="p-3 text-slate-600">${t.account}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.status === 'PREVISTO' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${t.status || 'REALIZADO'}</span></td>
+                                <td class="p-3 text-[11px] font-semibold">${t.type}</td>
+                                <td class="p-3 text-right font-bold ${colorClass}">${sign} ${formatBRL(t.amount)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Renderizar Tabela Completa (Aba Lançamentos)
+            const fullBody = document.getElementById('full-transactions-body');
+            if (fullBody) {
+                const query = (document.getElementById('tx-search-input')?.value || '').toLowerCase();
+                const filtered = txs.filter(t =>
+                    (t.desc || '').toLowerCase().includes(query) ||
+                    (t.category || '').toLowerCase().includes(query) ||
+                    (t.account || '').toLowerCase().includes(query)
+                );
+
+                if (filtered.length === 0) {
+                    fullBody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400 italic">Nenhum lançamento encontrado.</td></tr>`;
+                } else {
+                    fullBody.innerHTML = filtered.map(t => {
+                        const isPositive = t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA';
+                        const colorClass = t.type.startsWith('TRANSFERENCIA') ? 'text-amber-600' : (isPositive ? 'text-emerald-600' : 'text-rose-600');
+                        const sign = isPositive ? '+' : '-';
+                        return `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-3 whitespace-nowrap">${formatDateBR(t.dateCash)}</td>
+                                <td class="p-3 whitespace-nowrap text-slate-500">${formatDateBR(t.dateCompetence)}</td>
+                                <td class="p-3 font-medium text-slate-800">${t.desc}</td>
+                                <td class="p-3">${t.category}</td>
+                                <td class="p-3">${t.account}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${t.status === 'PREVISTO' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${t.status || 'REALIZADO'}</span></td>
+                                <td class="p-3 text-[11px]">${t.type}</td>
+                                <td class="p-3 text-right font-bold ${colorClass}">${sign} ${formatBRL(t.amount)}</td>
+                                <td class="p-3 text-center">
+                                    <button type="button" onclick="deleteTransaction('${t.id}')" class="text-rose-500 hover:text-rose-700 p-1" title="Excluir lançamento">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            updateCharts(catTotals, totalIncomeComp, totalExpenseComp);
+        }
+
+        function updateCharts(catTotals, totalIncome, totalExpense) {
+            if (typeof Chart === 'undefined') return;
+            try {
+                const catCanvas = document.getElementById('categoryChart');
+                if (catCanvas) {
+                    if (catChartInstance) catChartInstance.destroy();
+                    const labels = Object.keys(catTotals);
+                    const values = Object.values(catTotals);
+                    catChartInstance = new Chart(catCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels.length ? labels : ['Sem despesas'],
+                            datasets: [{
+                                data: values.length ? values : [1],
+                                backgroundColor: labels.length
+                                    ? ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#14b8a6', '#8b5cf6', '#ec4899', '#64748b']
+                                    : ['#e2e8f0']
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } }
+                    });
+                }
+
+                const flowCanvas = document.getElementById('flowChart');
+                if (flowCanvas) {
+                    if (flowChartInstance) flowChartInstance.destroy();
+                    flowChartInstance = new Chart(flowCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Receitas', 'Despesas'],
+                            datasets: [{
+                                label: 'Total (R$)',
+                                data: [totalIncome, totalExpense],
+                                backgroundColor: ['#10b981', '#ef4444'],
+                                borderRadius: 8
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                    });
+                }
+            } catch (err) {
+                console.warn("Aviso ao atualizar gráficos:", err);
+            }
+        }
+
         function renderAccountsTab() {
             const grid = document.getElementById('accounts-grid');
             if (!grid) return;
 
-            const accountBalances = {};
-            (appState.accounts || []).forEach(acc => {
-                accountBalances[acc.name] = {
-                    balance: Number(acc.initial_balance) || 0,
-                    count: 0,
-                    type: acc.type || 'Conta Bancária'
-                };
+            const balances = {};
+            const accMeta = {};
+
+            (appState.accounts || []).forEach(a => {
+                balances[a.name] = Number(a.initial_balance) || 0;
+                accMeta[a.name] = a.type || 'Conta Bancária';
             });
 
-            appState.transactions.forEach(t => {
+            (appState.transactions || []).forEach(t => {
+                const name = t.account || 'Conta Principal';
+                if (balances[name] === undefined) {
+                    balances[name] = 0;
+                    accMeta[name] = 'Conta Bancária';
+                }
                 if ((t.status || 'REALIZADO') !== 'REALIZADO') return;
-                const acc = t.account || 'Conta Principal';
-                if (!accountBalances[acc]) accountBalances[acc] = { balance: 0, count: 0, type: 'Conta Bancária' };
-                const amt = Number(t.amount) || 0;
-                if (t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA') accountBalances[acc].balance += amt;
-                else accountBalances[acc].balance -= amt;
-                accountBalances[acc].count++;
+                const val = Number(t.amount) || 0;
+                if (t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA') balances[name] += val;
+                else if (t.type === 'DESPESA' || t.type === 'TRANSFERENCIA_SAIDA') balances[name] -= val;
             });
 
-            const names = Object.keys(accountBalances);
+            const names = Object.keys(balances);
             if (names.length === 0) {
-                grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 glass-card rounded-xl">Nenhuma conta cadastrada ainda. Clique em "+ Nova Conta / Cartão" ou importe seus dados do Minhas Economias.</div>`;
+                grid.innerHTML = `<div class="col-span-full glass-card p-8 rounded-xl text-center text-slate-400 text-xs">Nenhuma conta cadastrada ainda. Clique em "+ Nova Conta / Cartão" ou importe sua planilha.</div>`;
                 return;
             }
 
             grid.innerHTML = names.map(name => {
-                const info = accountBalances[name];
-                const isPos = info.balance >= 0;
+                const bal = balances[name];
+                const isCard = /cart[aã]o|cr[eé]dito/i.test(accMeta[name]);
                 return `
                     <div class="glass-card p-5 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="font-bold text-slate-800 text-sm block">${escapeHtml(name)}</span>
-                                <span class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(info.type)}</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">${accMeta[name]}</span>
+                                <h4 class="font-bold text-slate-800 text-base mt-1">${name}</h4>
                             </div>
-                            <i class="fa-solid ${info.type.includes('Cartão') ? 'fa-credit-card text-indigo-500' : 'fa-building-columns text-emerald-600'} text-lg"></i>
+                            <div class="w-10 h-10 rounded-lg ${isCard ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'} flex items-center justify-center">
+                                <i class="fa-solid ${isCard ? 'fa-credit-card' : 'fa-building-columns'}"></i>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-[11px] text-slate-500 uppercase">Saldo Atual</p>
-                            <p class="text-xl font-bold ${isPos ? 'text-emerald-600' : 'text-rose-600'}">R$ ${info.balance.toFixed(2)}</p>
+                        <div class="pt-2 border-t border-slate-100">
+                            <span class="text-[11px] text-slate-400">Saldo Atual Realizado</span>
+                            <div class="text-xl font-bold ${bal >= 0 ? 'text-slate-900' : 'text-rose-600'}">${formatBRL(bal)}</div>
                         </div>
-                        <p class="text-[11px] text-slate-400 border-t pt-2">${info.count} movimentações registradas</p>
                     </div>
                 `;
             }).join('');
         }
 
-        // GRÁFICOS
-        function renderCharts(inc, exp, categoryMap) {
-            if (!window.Chart) return;
-
-            const ctxCat = document.getElementById('categoryChart');
-            if (ctxCat) {
-                if (catChartInstance) catChartInstance.destroy();
-                const labels = Object.keys(categoryMap);
-                const values = Object.values(categoryMap);
-                catChartInstance = new Chart(ctxCat, {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels.length ? labels : ['Sem despesas'],
-                        datasets: [{
-                            data: values.length ? values : [1],
-                            backgroundColor: labels.length ? ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#14b8a6', '#64748b'] : ['#e2e8f0']
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 11 } } } } }
-                });
-            }
-
-            const ctxFlow = document.getElementById('flowChart');
-            if (ctxFlow) {
-                if (flowChartInstance) flowChartInstance.destroy();
-                flowChartInstance = new Chart(ctxFlow, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Receitas', 'Despesas'],
-                        datasets: [{
-                            label: 'Total (R$)',
-                            data: [inc, exp],
-                            backgroundColor: ['#10b981', '#f43f5e'],
-                            borderRadius: 6
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-                });
-            }
-        }
-
-        // ASSISTENTE IA
+        // ASSISTENTE IA SOBRE DADOS REAIS
         window.generateRealFinancialInsight = function() {
             const box = document.getElementById('ai-chat-box');
-            if (!box) return;
-
+            const txs = appState.transactions || [];
+            if (txs.length === 0) {
+                box.innerHTML += `<p class="text-slate-300 mt-2">Ainda não há lançamentos registrados para analisar. Importe sua planilha ou registre uma movimentação.</p>`;
+                return;
+            }
             let inc = 0, exp = 0;
-            const catTotals = {};
-            appState.transactions.forEach(t => {
-                const amt = Number(t.amount) || 0;
-                if (t.type === 'RECEITA') inc += amt;
-                else {
-                    exp += amt;
-                    catTotals[t.category] = (catTotals[t.category] || 0) + amt;
+            const byCat = {};
+            txs.forEach(t => {
+                if (t.type === 'RECEITA') inc += t.amount;
+                if (t.type === 'DESPESA') {
+                    exp += t.amount;
+                    byCat[t.category] = (byCat[t.category] || 0) + t.amount;
                 }
             });
-
-            const sortedCats = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
-            const topCat = sortedCats[0];
-            const balance = inc - exp;
-
-            let report = `
-                <div class="p-3 bg-slate-800 rounded-lg border border-slate-700 space-y-1.5">
-                    <p class="text-emerald-400 font-bold">Diagnóstico em Tempo Real (${appState.transactions.length} lançamentos):</p>
-                    <p>• <strong>Receitas acumuladas:</strong> R$ ${inc.toFixed(2)}</p>
-                    <p>• <strong>Despesas acumuladas:</strong> R$ ${exp.toFixed(2)}</p>
-                    <p>• <strong>Saldo líquido:</strong> <span class="${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'} font-bold">R$ ${balance.toFixed(2)}</span></p>
-                    ${topCat ? `<p>• <strong>Maior foco de gastos:</strong> ${escapeHtml(topCat[0])} (R$ ${topCat[1].toFixed(2)})</p>` : ''}
+            const topCat = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0];
+            box.innerHTML += `
+                <div class="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-700">
+                    <p class="text-emerald-400 font-bold">Resumo Financeiro Atual:</p>
+                    <p>• Total de Receitas: <strong>${formatBRL(inc)}</strong></p>
+                    <p>• Total de Despesas: <strong>${formatBRL(exp)}</strong></p>
+                    <p>• Resultado por Competência: <strong>${formatBRL(inc - exp)}</strong></p>
+                    ${topCat ? `<p>• Maior categoria de gasto: <strong>${topCat[0]}</strong> (${formatBRL(topCat[1])})</p>` : ''}
                 </div>
             `;
-            box.innerHTML += report;
             box.scrollTop = box.scrollHeight;
         };
 
         window.handleAiQuestion = function(e) {
             e.preventDefault();
             const input = document.getElementById('ai-user-input');
-            const box = document.getElementById('ai-chat-box');
             const q = input.value.trim();
             if (!q) return;
-
-            box.innerHTML += `<p class="text-right text-indigo-300 font-medium">Você: ${escapeHtml(q)}</p>`;
+            const box = document.getElementById('ai-chat-box');
+            box.innerHTML += `<p class="text-sky-300 font-semibold mt-2">Você: ${q}</p>`;
             input.value = '';
 
             const qLow = q.toLowerCase();
-            const matches = appState.transactions.filter(t => 
-                t.desc.toLowerCase().includes(qLow) || 
-                t.category.toLowerCase().includes(qLow) || 
-                t.account.toLowerCase().includes(qLow)
+            const matches = (appState.transactions || []).filter(t =>
+                (t.desc || '').toLowerCase().includes(qLow) ||
+                (t.category || '').toLowerCase().includes(qLow) ||
+                (t.account || '').toLowerCase().includes(qLow)
             );
 
             if (matches.length > 0) {
-                const sum = matches.reduce((acc, t) => acc + (t.type === 'RECEITA' ? Number(t.amount) : -Number(t.amount)), 0);
-                box.innerHTML += `<p class="text-amber-300">Assistente: Encontrei <strong>${matches.length}</strong> lançamentos relacionados a "${escapeHtml(q)}", totalizando <strong>R$ ${Math.abs(sum).toFixed(2)}</strong>.</p>`;
+                const sum = matches.reduce((acc, t) => acc + (t.type === 'DESPESA' ? -t.amount : t.amount), 0);
+                box.innerHTML += `<p class="text-slate-200">Encontrei <strong>${matches.length}</strong> lançamentos relacionados a "${q}", somando <strong>${formatBRL(Math.abs(sum))}</strong>.</p>`;
             } else {
-                window.generateRealFinancialInsight();
+                generateRealFinancialInsight();
             }
             box.scrollTop = box.scrollHeight;
         };
 
-        function escapeHtml(str) {
-            return String(str || '')
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        function renderDashboard() {
-            let cashRealized = 0, cashProjected = 0, incCompetence = 0, expCompetence = 0;
-            const categoryMap = {};
-
-            appState.transactions.forEach(t => {
-                const amt = Number(t.amount) || 0;
-                const status = (t.status || 'REALIZADO').toUpperCase();
-                const isTransfer = t.type.startsWith('TRANSFERENCIA');
-
-                // 1. Visão de Caixa (Realizado vs Projetado)
-                if (t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA') {
-                    cashProjected += amt;
-                    if (status === 'REALIZADO') cashRealized += amt;
-                } else {
-                    cashProjected -= amt;
-                    if (status === 'REALIZADO') cashRealized -= amt;
-                }
-
-                // 2. Visão de Competência (Ignora transferências para não inflar receitas/despesas)
-                if (!isTransfer) {
-                    if (t.type === 'RECEITA') { 
-                        incCompetence += amt; 
-                    } else { 
-                        expCompetence += amt; 
-                        const cat = t.category || 'Outros';
-                        categoryMap[cat] = (categoryMap[cat] || 0) + amt;
-                    }
-                }
-            });
-
-            const competenceBalance = incCompetence - expCompetence;
-
-            document.getElementById('dash-total-balance').innerText = `R$ ${cashRealized.toFixed(2)}`;
-            document.getElementById('dash-projected-cash').innerText = `R$ ${cashProjected.toFixed(2)}`;
-            document.getElementById('dash-competence-balance').innerText = `R$ ${competenceBalance.toFixed(2)}`;
-            document.getElementById('dash-income').innerText = `R$ ${incCompetence.toFixed(2)}`;
-            document.getElementById('dash-expense').innerText = `R$ ${expCompetence.toFixed(2)}`;
-            document.getElementById('dash-count').innerText = `${appState.transactions.length} lançamentos`;
-
-            renderCharts(incCompetence, expCompetence, categoryMap);
-
-            const body = document.getElementById('dash-transactions-body');
-            const fullBody = document.getElementById('full-transactions-body');
-            const searchTerm = (document.getElementById('tx-search-input')?.value || '').toLowerCase();
-
-            if (body) body.innerHTML = '';
-            if (fullBody) fullBody.innerHTML = '';
-
-            if (!appState.transactions || appState.transactions.length === 0) {
-                const emptyRow = '<tr><td colspan="9" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado no banco de produção ainda.</td></tr>';
-                if (body) body.innerHTML = emptyRow;
-                if (fullBody) fullBody.innerHTML = emptyRow;
-                return;
+        // INICIALIZAÇÃO SEGURA AO CARREGAR A PÁGINA
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                loadDataFromStorage();
+                renderDashboard();
+                renderAccountsTab();
+                await syncAllWithSupabase();
+            } catch (err) {
+                console.error("Erro na inicialização:", err);
             }
-
-            appState.transactions.forEach((t, index) => {
-                const isInc = t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA';
-                const isTransfer = t.type.startsWith('TRANSFERENCIA');
-                const numAmount = Number(t.amount) || 0;
-                const dComp = t.dateCompetence || t.dateCash;
-                const status = t.status || 'REALIZADO';
-                const badgeClass = isTransfer ? 'bg-amber-100 text-amber-800' : (isInc ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800');
-                const statusBadge = status === 'PREVISTO' ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">PREVISTO</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">REALIZADO</span>';
-                
-                if (body && index < 10) {
-                    body.innerHTML += `
-                        <tr class="hover:bg-slate-50 border-b border-slate-100">
-                            <td class="p-3">
-                                <div class="font-medium text-slate-800">Cx: ${escapeHtml(t.dateCash)}</div>
-                                <div class="text-[10px] text-teal-600">Comp: ${escapeHtml(dComp)}</div>
-                            </td>
-                            <td class="p-3 font-semibold text-slate-800">${escapeHtml(t.desc)}</td>
-                            <td class="p-3">${escapeHtml(t.category)}</td>
-                            <td class="p-3">${escapeHtml(t.account)}</td>
-                            <td class="p-3">${statusBadge}</td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${escapeHtml(t.type)}</span></td>
-                            <td class="p-3 text-right font-bold ${isInc ? 'text-emerald-600' : 'text-slate-800'}">${isInc ? '+' : '-'} R$ ${numAmount.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }
-
-                const matchesSearch = !searchTerm || 
-                    t.desc.toLowerCase().includes(searchTerm) || 
-                    t.category.toLowerCase().includes(searchTerm) || 
-                    t.account.toLowerCase().includes(searchTerm);
-
-                if (fullBody && matchesSearch) {
-                    fullBody.innerHTML += `
-                        <tr class="hover:bg-slate-50 border-b border-slate-100">
-                            <td class="p-3">${escapeHtml(t.dateCash)}</td>
-                            <td class="p-3 text-teal-700 font-medium">${escapeHtml(dComp)}</td>
-                            <td class="p-3 font-semibold text-slate-800">${escapeHtml(t.desc)}</td>
-                            <td class="p-3">${escapeHtml(t.category)}</td>
-                            <td class="p-3">${escapeHtml(t.account)}</td>
-                            <td class="p-3">${statusBadge}</td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${escapeHtml(t.type)}</span></td>
-                            <td class="p-3 text-right font-bold ${isInc ? 'text-emerald-600' : 'text-slate-800'}">${isInc ? '+' : '-'} R$ ${numAmount.toFixed(2)}</td>
-                            <td class="p-3 text-center">
-                                <button type="button" onclick="deleteTransaction('${escapeHtml(t.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="Excluir Lançamento">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }
-            });
-        }
-
-        window.onload = async function() {
-            loadDataFromStorage();
-            await loadDataFromSupabase();
-            renderDashboard();
-            renderAccountsTab();
-        };
+        });
     </script>
 </body>
 </html>
