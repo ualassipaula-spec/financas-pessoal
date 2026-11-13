@@ -128,7 +128,7 @@
                 </div>
             </div>
 
-            <!-- Charts Section (Dados Reais) -->
+            <!-- Charts Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div class="glass-card p-5 rounded-xl shadow-sm">
                     <h3 class="font-bold text-slate-800 text-sm mb-3">Despesas por Categoria</h3>
@@ -170,7 +170,7 @@
             </div>
         </section>
 
-        <!-- ACCOUNTS TAB (CÁLCULO REAL POR CONTA) -->
+        <!-- ACCOUNTS TAB -->
         <section id="tab-accounts" class="space-y-6 hidden">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-bold text-slate-800">Saldos Consolidados por Conta e Cartão</h3>
@@ -179,7 +179,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="accounts-grid"></div>
         </section>
 
-        <!-- TRANSACTIONS TAB (HISTÓRICO COMPLETO COM FILTRO E EXCLUSÃO REAL) -->
+        <!-- TRANSACTIONS TAB -->
         <section id="tab-transactions" class="space-y-4 hidden">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h3 class="text-lg font-bold text-slate-800">Histórico Completo de Lançamentos</h3>
@@ -205,7 +205,7 @@
             </div>
         </section>
 
-        <!-- AI ASSISTANT TAB (ANÁLISE REAL DOS DADOS DO USUÁRIO) -->
+        <!-- AI ASSISTANT TAB -->
         <section id="tab-ai-assistant" class="space-y-6 hidden">
             <div class="glass-card p-6 rounded-xl space-y-4">
                 <div class="flex items-center justify-between">
@@ -255,7 +255,7 @@
         </div>
     </div>
 
-    <!-- MODAL: ESCANEAR NOTA (OCR REAL) -->
+    <!-- MODAL: ESCANEAR NOTA (OCR REAL COM BOTÃO DE CÂMERA DEDICADA) -->
     <div id="scanModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center z-[9999] p-4 overflow-y-auto">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4 my-auto">
             <div class="flex justify-between items-center border-b pb-3">
@@ -264,11 +264,20 @@
             </div>
             
             <div class="space-y-4 text-xs">
-                <div id="scan-upload-box" class="border-2 border-dashed border-indigo-300 rounded-xl p-6 text-center cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 transition" onclick="document.getElementById('scan-file-input').click()">
+                <div id="scan-upload-box" class="space-y-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" onclick="document.getElementById('scan-camera-input').click()" class="p-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex flex-col items-center justify-center gap-2 shadow-sm transition">
+                            <i class="fa-solid fa-camera text-2xl"></i>
+                            <span class="font-bold">Tirar Foto Agora</span>
+                        </button>
+                        <button type="button" onclick="document.getElementById('scan-file-input').click()" class="p-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl flex flex-col items-center justify-center gap-2 border border-slate-300 transition">
+                            <i class="fa-solid fa-image text-2xl text-slate-500"></i>
+                            <span class="font-bold">Escolher da Galeria</span>
+                        </button>
+                    </div>
+                    <!-- Inputs ocultos para captura direta e galeria -->
+                    <input type="file" id="scan-camera-input" accept="image/*" capture="environment" class="hidden" onchange="handleScanImage(event)">
                     <input type="file" id="scan-file-input" accept="image/*" class="hidden" onchange="handleScanImage(event)">
-                    <i class="fa-solid fa-camera text-3xl text-indigo-600 mb-2"></i>
-                    <p class="font-semibold text-indigo-900">Tirar foto ou selecionar imagem da notinha</p>
-                    <p class="text-[11px] text-indigo-600/80 mt-1">Leitura óptica automática de valor total, data e loja</p>
                 </div>
 
                 <div id="scan-loading" class="hidden p-4 bg-indigo-50 rounded-xl text-center space-y-2 border border-indigo-100">
@@ -282,7 +291,7 @@
                 <form id="scan-review-form" onsubmit="confirmScanSave(event)" class="hidden space-y-3 pt-2 border-t border-slate-200">
                     <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-lg flex items-center gap-2">
                         <i class="fa-solid fa-circle-check text-emerald-600"></i>
-                        <span class="font-medium">Dados extraídos! Confirme para salvar em produção:</span>
+                        <span class="font-medium">Dados extraídos! Confirme o valor e salve:</span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -436,6 +445,7 @@
 
         window.openScanModal = function() {
             document.getElementById('scan-file-input').value = '';
+            document.getElementById('scan-camera-input').value = '';
             document.getElementById('scan-upload-box').classList.remove('hidden');
             document.getElementById('scan-loading').classList.add('hidden');
             document.getElementById('scan-review-form').classList.add('hidden');
@@ -475,7 +485,7 @@
             console.error("Erro ao iniciar cliente Supabase:", err);
         }
 
-        const STORAGE_KEY = 'financas_pessoal_prod_v2';
+        const STORAGE_KEY = 'financas_pessoal_prod_v3';
         let appState = { transactions: [] };
         let pendingMeList = [];
         let catChartInstance = null;
@@ -577,7 +587,7 @@
             renderAccountsTab();
         };
 
-        // LEITURA REAL DE NOTINHAS (OCR COM TESSERACT.JS)
+        // LEITURA OCR REAL DE NOTINHAS
         window.handleScanImage = async function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -586,21 +596,23 @@
             const statusText = document.getElementById('scan-status-text');
             const progressBar = document.getElementById('scan-progress-bar');
             const reviewForm = document.getElementById('scan-review-form');
+            const uploadBox = document.getElementById('scan-upload-box');
 
+            uploadBox.classList.add('hidden');
             loadingBox.classList.remove('hidden');
             reviewForm.classList.add('hidden');
             statusText.innerText = "Processando imagem da nota fiscal...";
-            progressBar.style.width = "20%";
+            progressBar.style.width = "25%";
 
             try {
-                if (!window.Tesseract) throw new Error("OCR indisponível no momento.");
+                if (!window.Tesseract) throw new Error("OCR indisponível.");
 
                 const result = await Tesseract.recognize(file, 'por', {
                     logger: m => {
                         if (m.status === 'recognizing text') {
                             const pct = Math.round(m.progress * 100);
-                            progressBar.style.width = `${Math.max(20, pct)}%`;
-                            statusText.innerText = `Lendo caracteres da nota: ${pct}%`;
+                            progressBar.style.width = `${Math.max(25, pct)}%`;
+                            statusText.innerText = `Lendo caracteres: ${pct}%`;
                         }
                     }
                 });
@@ -608,7 +620,7 @@
                 const text = result.data.text || '';
                 const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
 
-                let storeName = 'Compra via Cupom Fiscal';
+                let storeName = 'Cupom Fiscal';
                 for (let i = 0; i < Math.min(lines.length, 6); i++) {
                     const line = lines[i];
                     if (!line.toUpperCase().includes('CNPJ') && !line.toUpperCase().includes('DOCUMENTO') && line.length > 4) {
@@ -700,7 +712,7 @@
             renderAccountsTab();
         };
 
-        // IMPORTAÇÃO COMPLETA MINHAS ECONOMIAS
+        // IMPORTAÇÃO MINHAS ECONOMIAS
         window.processMinhasEconomiasFile = function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -716,7 +728,7 @@
                 let headerIndex = -1;
                 for (let r = 0; r < Math.min(matrixRows.length, 25); r++) {
                     let rowStr = JSON.stringify(matrixRows[r]).toLowerCase();
-                    if (rowStr.includes('data') || rowStr.includes('descri') || rowStr.includes('valor') || rowStr.includes('categoria') || rowStr.includes('histó') || rowStr.includes('historico')) {
+                    if (rowStr.includes('data') || rowStr.includes('descri') || rowStr.includes('valor') || rowStr.includes('categoria') || rowStr.includes('histó')) {
                         headerIndex = r;
                         break;
                     }
@@ -748,11 +760,11 @@
                     if (!row) continue;
 
                     let rawDate = getRowVal(row, ['data', 'date', 'vencimento', 'dt']);
-                    let rawDesc = getRowVal(row, ['descri', 'desc', 'historico', 'titulo', 'nome', 'observ', 'lançamento', 'lancamento']);
+                    let rawDesc = getRowVal(row, ['descri', 'desc', 'historico', 'titulo', 'nome', 'lancamento']);
                     let rawCat = getRowVal(row, ['categoria', 'cat', 'subcategoria']);
-                    let rawAcc = getRowVal(row, ['conta', 'card', 'cartao', 'banco', 'origem']);
-                    let rawType = getRowVal(row, ['tipo', 'natureza', 'situacao', 'status', 'movimentacao']);
-                    let rawVal = getRowVal(row, ['valor', 'val', 'amount', 'preco', 'quantia', 'saldo', 'total']);
+                    let rawAcc = getRowVal(row, ['conta', 'card', 'cartao', 'banco']);
+                    let rawType = getRowVal(row, ['tipo', 'natureza', 'situacao', 'status']);
+                    let rawVal = getRowVal(row, ['valor', 'val', 'amount', 'preco', 'quantia', 'total']);
 
                     if (!rawVal && Array.isArray(row)) {
                         for (let v of row) {
@@ -883,7 +895,7 @@
             pendingMeList = [];
         };
 
-        // TRANSFERÊNCIA REAL (GERA SAÍDA NA ORIGEM E ENTRADA NO DESTINO)
+        // TRANSFERÊNCIA
         window.handleSaveTransfer = async function(e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('tr-amount').value);
@@ -923,7 +935,7 @@
             renderAccountsTab();
         };
 
-        // NOVO LANÇAMENTO COMPLETO
+        // NOVO LANÇAMENTO
         window.handleSaveTransaction = async function(e) {
             e.preventDefault();
             const type = document.getElementById('tx-type').value;
@@ -955,7 +967,7 @@
             renderAccountsTab();
         };
 
-        // RENDERIZAÇÃO DE CONTAS E CARTÕES REAIS
+        // RENDERIZAÇÃO CONTAS
         function renderAccountsTab() {
             const grid = document.getElementById('accounts-grid');
             if (!grid) return;
@@ -995,7 +1007,7 @@
             }).join('');
         }
 
-        // GRÁFICOS REAIS COM CHART.JS
+        // GRÁFICOS
         function renderCharts(inc, exp, categoryMap) {
             if (!window.Chart) return;
 
@@ -1036,7 +1048,7 @@
             }
         }
 
-        // ASSISTENTE IA BASEADO NOS DADOS REAIS
+        // ASSISTENTE IA
         window.generateRealFinancialInsight = function() {
             const box = document.getElementById('ai-chat-box');
             if (!box) return;
