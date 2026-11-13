@@ -865,20 +865,34 @@
 
                     let dateStr = new Date().toISOString().split('T')[0];
                     if (rawDate) {
-                        if (typeof rawDate === 'number') {
+                        if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+                            const y = rawDate.getFullYear();
+                            const m = String(rawDate.getMonth() + 1).padStart(2, '0');
+                            const d = String(rawDate.getDate()).padStart(2, '0');
+                            dateStr = `${y}-${m}-${d}`;
+                        } else if (typeof rawDate === 'number') {
                             const parsedExcelDate = new Date(Math.round((rawDate - 25569) * 86400 * 1000));
-                            if (!isNaN(parsedExcelDate.getTime())) dateStr = parsedExcelDate.toISOString().split('T')[0];
+                            if (!isNaN(parsedExcelDate.getTime())) {
+                                dateStr = parsedExcelDate.toISOString().split('T')[0];
+                            }
                         } else {
-                            let strD = String(rawDate).trim();
+                            let strD = String(rawDate).trim().split(' ')[0];
                             if (strD.includes('/')) {
                                 let parts = strD.split('/');
                                 if (parts.length === 3) {
+                                    let day = parts[0].trim().padStart(2, '0');
+                                    let month = parts[1].trim().padStart(2, '0');
                                     let year = parts[2].trim();
                                     if (year.length === 2) year = '20' + year;
-                                    dateStr = `${year.slice(0,4)}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                    dateStr = `${year.slice(0, 4)}-${month}-${day}`;
                                 }
                             } else if (strD.includes('-')) {
-                                dateStr = strD.slice(0, 10);
+                                let parts = strD.split('-');
+                                if (parts.length === 3 && parts[0].length === 4) {
+                                    dateStr = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].slice(0, 2).padStart(2, '0')}`;
+                                } else if (parts.length === 3 && parts[2].length === 4) {
+                                    dateStr = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                                }
                             }
                         }
                     }
@@ -927,9 +941,9 @@
             if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
                 reader.onload = function(e) {
                     const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    const matrix = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'dd/mm/yyyy' });
                     handleParsedResult(matrix);
                 };
                 reader.readAsArrayBuffer(file);
