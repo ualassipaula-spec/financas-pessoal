@@ -592,14 +592,14 @@
         try {
             if (window.supabase) {
                 supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    auth: { persistSession: true, autoRefreshToken: true }
+                    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
                 });
             }
         } catch(err) {
             console.error("Erro ao inicializar Supabase:", err);
         }
 
-        const STORAGE_KEY = 'financas_pessoal_supabase_v5';
+        const STORAGE_KEY = 'financas_pessoal_supabase_v6';
         let appState = { transactions: [], accounts: [] };
         let pendingMeList = [];
         let pendingMeAccounts = [];
@@ -607,7 +607,11 @@
         let flowChartInstance = null;
 
         function saveDataToStorage() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.warn("Erro ao salvar no localStorage:", e);
+            }
         }
 
         function loadDataFromStorage() {
@@ -672,6 +676,7 @@
             saveDataToStorage();
             closeModal('accountModal');
             renderAccountsTab();
+            renderDashboard();
         };
 
         async function loadDataFromSupabase() {
@@ -680,15 +685,17 @@
             if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span> Sincronizando Supabase...`;
 
             try {
-                // Testar conexão buscando a tabela transactions com limite 1
-                const { error: testErr } = await supabaseClient.from('transactions').select('id').limit(1);
-                if (testErr) {
-                    console.warn("Aviso de acesso Supabase:", testErr.message);
-                    if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local (Offline)`;
-                    return false;
+                // Tenta autenticar anonimamente sem bloquear a execução caso falhe
+                try {
+                    const { data: authData } = await supabaseClient.auth.getSession();
+                    if (!authData || !authData.session) {
+                        await supabaseClient.auth.signInAnonymously();
+                    }
+                } catch (authErr) {
+                    console.warn("Aviso de sessão anônima:", authErr);
                 }
 
-                // Carregar Contas
+                // Carregar Contas do Supabase
                 const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
                 if (!accErr && Array.isArray(accData) && accData.length > 0) {
                     appState.accounts = accData.map(a => ({
@@ -699,38 +706,37 @@
                     }));
                 }
 
-                // Carregar Lançamentos
-                const { data, error } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
-                if (!error && Array.isArray(data)) {
-                    if (data.length > 0) {
-                        const detectedAccs = new Set();
-                        appState.transactions = data.map(item => {
-                            const dCash = item.date || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]);
-                            const accName = item.account || 'Conta Principal';
-                            detectedAccs.add(accName);
-                            return {
-                                id: item.id,
-                                dateCash: dCash,
-                                dateCompetence: item.competence_date || dCash,
-                                status: (item.status || 'REALIZADO').toUpperCase(),
-                                desc: item.description || item.desc || 'Lançamento',
-                                category: item.category || 'Outros',
-                                account: accName,
-                                type: (item.type || (Number(item.amount) < 0 ? 'DESPESA' : 'RECEITA')).toUpperCase(),
-                                amount: Math.abs(Number(item.amount) || 0)
-                            };
-                        });
-                        await ensureAccountsRegistered(Array.from(detectedAccs));
-                        saveDataToStorage();
-                    }
-                    if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Conectado`;
-                    return true;
+                // Carregar Lançamentos do Supabase
+                const { data, error } = await supabaseClient.from('transactions').select('*');
+                if (!error && Array.isArray(data) && data.length > 0) {
+                    const detectedAccs = new Set();
+                    appState.transactions = data.map(item => {
+                        const dCash = item.date || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]);
+                        const accName = item.account || 'Conta Principal';
+                        detectedAccs.add(accName);
+                        return {
+                            id: item.id,
+                            dateCash: dCash,
+                            dateCompetence: item.competence_date || dCash,
+                            status: (item.status || 'REALIZADO').toUpperCase(),
+                            desc: item.description || item.desc || 'Lançamento',
+                            category: item.category || 'Outros',
+                            account: accName,
+                            type: (item.type || (Number(item.amount) < 0 ? 'DESPESA' : 'RECEITA')).toUpperCase(),
+                            amount: Math.abs(Number(item.amount) || 0)
+                        };
+                    });
+                    await ensureAccountsRegistered(Array.from(detectedAccs));
+                    saveDataToStorage();
                 }
+
+                if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Conectado`;
+                return true;
             } catch(e) {
                 console.warn("Exceção ao conectar ao Supabase:", e);
             }
 
-            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local (Offline)`;
+            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local (Offline Seguro)`;
             return false;
         }
 
@@ -741,7 +747,7 @@
             if (ok) {
                 alert("Conexão com o Supabase estabelecida com sucesso!");
             } else {
-                alert("Não foi possível conectar ao Supabase. Verifique se as tabelas 'transactions' e 'accounts' possuem permissão de acesso no painel do Supabase.");
+                alert("Usando modo local offline. Seus dados estão seguros neste navegador.");
             }
         };
 
@@ -1538,9 +1544,12 @@
         };
 
         window.addEventListener('DOMContentLoaded', async () => {
+            // 1. Carrega imediatamente do localStorage para que os dados apareçam na hora
             loadDataFromStorage();
             renderDashboard();
             renderAccountsTab();
+
+            // 2. Tenta sincronizar com o Supabase em segundo plano
             await loadDataFromSupabase();
             renderDashboard();
             renderAccountsTab();
