@@ -668,7 +668,7 @@
             closeModal('accountModal');
             renderAccountsTab();
         };
-// ... existing code ... -->
+
         async function loadDataFromSupabase() {
             if (!supabaseClient) return false;
             try {
@@ -709,10 +709,18 @@
                         await ensureAccountsRegistered(Array.from(detectedAccs));
                         saveDataToStorage();
                     }
+                    const badge = document.getElementById('supabase-status-badge');
+                    if (badge) {
+                        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Produção`;
+                    }
                     return true;
                 }
             } catch(e) {
                 console.log("Falha de rede ao buscar Supabase, usando cache local:", e);
+            }
+            const badge = document.getElementById('supabase-status-badge');
+            if (badge) {
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local / Offline`;
             }
             return false;
         }
@@ -780,7 +788,7 @@
             const badge = document.getElementById('supabase-status-badge');
             if (badge) {
                 badge.innerHTML = ok
-                    ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sincronizado Agora`
+                    ? `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Produção`
                     : `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local / Offline`;
             }
         };
