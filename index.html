@@ -109,22 +109,31 @@
 
         <!-- DASHBOARD TAB -->
         <section id="tab-dashboard" class="space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="glass-card p-5 rounded-xl shadow-sm">
-                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Saldo Total Consolidado</span>
+                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Saldo Atual (Caixa Realizado)</span>
                     <div class="text-2xl font-bold text-slate-900 mt-2" id="dash-total-balance">R$ 0,00</div>
+                    <span class="text-[10px] text-slate-400">Dinheiro efetivo nas contas</span>
+                </div>
+                <div class="glass-card p-5 rounded-xl shadow-sm border-indigo-200 bg-indigo-50/30">
+                    <span class="text-indigo-800 text-xs font-semibold uppercase tracking-wider">Saldo Projetado de Caixa</span>
+                    <div class="text-2xl font-bold text-indigo-700 mt-2" id="dash-projected-cash">R$ 0,00</div>
+                    <span class="text-[10px] text-indigo-500">Inclui previstos a pagar/receber</span>
+                </div>
+                <div class="glass-card p-5 rounded-xl shadow-sm border-teal-200 bg-teal-50/30">
+                    <span class="text-teal-800 text-xs font-semibold uppercase tracking-wider">Saldo por Competência</span>
+                    <div class="text-2xl font-bold text-teal-700 mt-2" id="dash-competence-balance">R$ 0,00</div>
+                    <span class="text-[10px] text-teal-500">Resultado econômico (Receitas - Despesas)</span>
                 </div>
                 <div class="glass-card p-5 rounded-xl shadow-sm">
-                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Receitas Totais</span>
+                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Receitas (Competência)</span>
                     <div class="text-2xl font-bold text-emerald-600 mt-2" id="dash-income">R$ 0,00</div>
+                    <span class="text-[10px] text-slate-400">Sem transferências</span>
                 </div>
                 <div class="glass-card p-5 rounded-xl shadow-sm">
-                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Despesas Totais</span>
+                    <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Despesas (Competência)</span>
                     <div class="text-2xl font-bold text-rose-600 mt-2" id="dash-expense">R$ 0,00</div>
-                </div>
-                <div class="glass-card p-5 rounded-xl shadow-sm border-emerald-200 bg-emerald-50/40">
-                    <span class="text-slate-600 text-xs font-semibold uppercase tracking-wider">Total de Movimentações</span>
-                    <div class="text-2xl font-bold text-emerald-800 mt-2" id="dash-count">0 lançamentos</div>
+                    <span class="text-[10px] text-slate-400" id="dash-count">0 lançamentos</span>
                 </div>
             </div>
 
@@ -154,16 +163,17 @@
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-100 text-slate-700 font-semibold uppercase">
                             <tr>
-                                <th class="p-3">Data</th>
+                                <th class="p-3">Caixa / Competência</th>
                                 <th class="p-3">Descrição</th>
                                 <th class="p-3">Categoria</th>
                                 <th class="p-3">Conta</th>
+                                <th class="p-3">Status</th>
                                 <th class="p-3">Tipo</th>
                                 <th class="p-3 text-right">Valor</th>
                             </tr>
                         </thead>
                         <tbody id="dash-transactions-body" class="divide-y divide-slate-100">
-                            <tr><td colspan="6" class="p-6 text-center text-slate-400 italic">Carregando lançamentos do banco de dados...</td></tr>
+                            <tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Carregando lançamentos do banco de dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -172,9 +182,12 @@
 
         <!-- ACCOUNTS TAB -->
         <section id="tab-accounts" class="space-y-6 hidden">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800">Saldos Consolidados por Conta e Cartão</h3>
-                <button type="button" onclick="openModal('transactionModal')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-semibold">+ Lançar em Conta</button>
+            <div class="flex flex-wrap justify-between items-center gap-2">
+                <h3 class="text-lg font-bold text-slate-800">Contas Bancárias e Cartões</h3>
+                <div class="flex gap-2">
+                    <button type="button" onclick="openModal('accountModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold">+ Nova Conta / Cartão</button>
+                    <button type="button" onclick="openModal('transactionModal')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">+ Lançar em Conta</button>
+                </div>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="accounts-grid"></div>
         </section>
@@ -190,10 +203,12 @@
                     <table class="w-full text-left text-xs text-slate-600">
                         <thead class="bg-slate-800 text-slate-200 font-semibold uppercase">
                             <tr>
-                                <th class="p-3">Data</th>
+                                <th class="p-3">Data Caixa</th>
+                                <th class="p-3">Competência</th>
                                 <th class="p-3">Descrição</th>
                                 <th class="p-3">Categoria</th>
                                 <th class="p-3">Conta</th>
+                                <th class="p-3">Status</th>
                                 <th class="p-3">Tipo</th>
                                 <th class="p-3 text-right">Valor (R$)</th>
                                 <th class="p-3 text-center">Ações</th>
@@ -243,6 +258,7 @@
                 </div>
                 <div id="me-preview-summary" class="hidden p-3 bg-slate-100 rounded-lg text-slate-700 space-y-2">
                     <p class="font-bold text-emerald-700" id="me-summary-text">0 lançamentos identificados.</p>
+                    <p class="text-[11px] text-slate-600 font-medium" id="me-summary-accounts">Contas detectadas: Nenhuma</p>
                     <p class="text-[11px] text-slate-500" id="me-summary-balance">Saldo total calculado: R$ 0,00</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2 border-t">
@@ -300,8 +316,22 @@
                             <input type="number" step="0.01" id="scan-amount" required class="w-full p-2 border border-slate-300 rounded-lg font-bold text-slate-900 bg-amber-50/40">
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1 text-slate-700">Data da Compra</label>
+                            <label class="block font-semibold mb-1 text-slate-700">Data da Compra (Competência)</label>
                             <input type="date" id="scan-date" required class="w-full p-2 border border-slate-300 rounded-lg">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1 text-slate-700">Data de Pagamento (Caixa)</label>
+                            <input type="date" id="scan-date-cash" required class="w-full p-2 border border-slate-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-slate-700">Status</label>
+                            <select id="scan-status" class="w-full p-2 border border-slate-300 rounded-lg">
+                                <option value="REALIZADO">Realizado (Pago)</option>
+                                <option value="PREVISTO">Previsto (A Pagar)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -383,7 +413,7 @@
                 <button type="button" onclick="closeModal('transactionModal')" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <form id="tx-form" onsubmit="handleSaveTransaction(event)" class="space-y-3 text-xs">
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-3 gap-2">
                     <div>
                         <label class="block font-semibold mb-1">Tipo</label>
                         <select id="tx-type" class="w-full p-2 border rounded-lg">
@@ -395,16 +425,29 @@
                         <label class="block font-semibold mb-1">Valor (R$)</label>
                         <input type="number" step="0.01" id="tx-amount" required placeholder="0,00" class="w-full p-2 border rounded-lg">
                     </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Status</label>
+                        <select id="tx-status" class="w-full p-2 border rounded-lg">
+                            <option value="REALIZADO">Realizado</option>
+                            <option value="PREVISTO">Previsto</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="block font-semibold mb-1">Descrição</label>
                     <input type="text" id="tx-desc" required placeholder="Ex: Supermercado, Salário..." class="w-full p-2 border rounded-lg">
                 </div>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                     <div>
-                        <label class="block font-semibold mb-1">Data</label>
-                        <input type="date" id="tx-date" required class="w-full p-2 border rounded-lg">
+                        <label class="block font-semibold mb-1 text-indigo-800">Data de Caixa (Entrada/Saída)</label>
+                        <input type="date" id="tx-date" required class="w-full p-2 border rounded-lg bg-white">
                     </div>
+                    <div>
+                        <label class="block font-semibold mb-1 text-teal-800">Data de Competência (Mês Fato)</label>
+                        <input type="date" id="tx-date-competence" required class="w-full p-2 border rounded-lg bg-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block font-semibold mb-1">Categoria</label>
                         <input type="text" id="tx-category" value="Geral" required class="w-full p-2 border rounded-lg">
@@ -422,14 +465,54 @@
         </div>
     </div>
 
+    <!-- MODAL: NOVA CONTA BANCÁRIA / CARTÃO -->
+    <div id="accountModal" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm items-center justify-center z-[9999] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-base">Cadastrar Conta Bancária ou Cartão</h3>
+                <button type="button" onclick="closeModal('accountModal')" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form onsubmit="handleCreateAccount(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold mb-1">Nome da Conta / Cartão</label>
+                    <input type="text" id="acc-name" required placeholder="Ex: Nubank, Itaú, Carteira..." class="w-full p-2 border rounded-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold mb-1">Tipo</label>
+                        <select id="acc-type" class="w-full p-2 border rounded-lg">
+                            <option value="Conta Corrente">Conta Corrente</option>
+                            <option value="Poupança">Poupança</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                            <option value="Dinheiro / Carteira">Dinheiro / Carteira</option>
+                            <option value="Investimento">Investimento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Saldo Inicial (R$)</label>
+                        <input type="number" step="0.01" id="acc-initial" value="0.00" class="w-full p-2 border rounded-lg">
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end gap-2 border-t">
+                    <button type="button" onclick="closeModal('accountModal')" class="px-4 py-2 border rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg">Salvar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- SCRIPT DA APLICAÇÃO EM PRODUÇÃO -->
     <script>
         // FUNÇÕES GLOBAIS DE NAVEGAÇÃO E MODAIS
         window.openModal = function(id) {
             const m = document.getElementById(id);
             if (m) {
-                if (id === 'transactionModal') document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
-                if (id === 'transferModal') document.getElementById('tr-date').value = new Date().toISOString().split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+                if (id === 'transactionModal') {
+                    document.getElementById('tx-date').value = today;
+                    document.getElementById('tx-date-competence').value = today;
+                }
+                if (id === 'transferModal') document.getElementById('tr-date').value = today;
                 m.classList.remove('hidden'); 
                 m.classList.add('flex'); 
             }
@@ -486,8 +569,9 @@
         }
 
         const STORAGE_KEY = 'financas_pessoal_prod_v3';
-        let appState = { transactions: [] };
+        let appState = { transactions: [], accounts: [] };
         let pendingMeList = [];
+        let pendingMeAccounts = [];
         let catChartInstance = null;
         let flowChartInstance = null;
 
@@ -499,59 +583,79 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 try {
-                    appState = JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    appState = {
+                        transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+                        accounts: Array.isArray(parsed.accounts) ? parsed.accounts : []
+                    };
                 } catch(e) {
-                    appState = { transactions: [] };
+                    appState = { transactions: [], accounts: [] };
                 }
             }
         }
 
-        async function saveTransactionToSupabase(tx) {
-            if (!supabaseClient) return null;
-            try {
-                const { data, error } = await supabaseClient
-                    .from('transactions')
-                    .insert([{
-                        description: tx.desc,
-                        amount: tx.type === 'DESPESA' ? -Math.abs(tx.amount) : Math.abs(tx.amount),
-                        type: tx.type,
-                        category: tx.category,
-                        account: tx.account,
-                        date: tx.dateCash
-                    }])
-                    .select();
-                if (error) {
-                    console.warn("Aviso Supabase Insert:", error.message);
-                    return null;
+        async function ensureAccountsRegistered(accountNames) {
+            if (!Array.isArray(accountNames) || accountNames.length === 0) return;
+            const existingNames = new Set((appState.accounts || []).map(a => a.name.toLowerCase()));
+            const newAccountsToInsert = [];
+
+            accountNames.forEach(rawName => {
+                const cleanName = String(rawName || '').trim();
+                if (!cleanName || existingNames.has(cleanName.toLowerCase())) return;
+                existingNames.add(cleanName.toLowerCase());
+
+                const isCard = /cart[aã]o|cr[eé]dito|nubank|visa|master|elo/i.test(cleanName);
+                const accObj = {
+                    name: cleanName,
+                    type: isCard ? 'Cartão de Crédito' : 'Conta Bancária',
+                    initial_balance: 0
+                };
+                appState.accounts.push(accObj);
+                newAccountsToInsert.push(accObj);
+            });
+
+            saveDataToStorage();
+
+            if (supabaseClient && newAccountsToInsert.length > 0) {
+                try {
+                    await supabaseClient.from('accounts').insert(newAccountsToInsert);
+                } catch (e) {
+                    console.warn("Aviso ao registrar contas no Supabase:", e);
                 }
-                return data && data[0] ? data[0].id : null;
-            } catch(e) {
-                console.error("Erro ao gravar no Supabase:", e);
-                return null;
             }
         }
 
-        async function deleteTransactionFromSupabase(id) {
-            if (!supabaseClient || !id) return;
-            try {
-                await supabaseClient.from('transactions').delete().eq('id', id);
-            } catch(e) {
-                console.warn("Aviso ao excluir no Supabase:", e);
-            }
-        }
+        window.handleCreateAccount = async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('acc-name').value.trim();
+            const type = document.getElementById('acc-type').value;
+            const initial = parseFloat(document.getElementById('acc-initial').value) || 0;
+            if (!name) return;
 
-        window.syncAllWithSupabase = async function() {
-            const badge = document.getElementById('supabase-status-badge');
-            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> Sincronizando...`;
-            await loadDataFromSupabase();
-            renderDashboard();
+            await ensureAccountsRegistered([name]);
+            const acc = appState.accounts.find(a => a.name.toLowerCase() === name.toLowerCase());
+            if (acc) {
+                acc.type = type;
+                acc.initial_balance = initial;
+            }
+            saveDataToStorage();
+            closeModal('accountModal');
             renderAccountsTab();
-            if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Supabase Sincronizado`;
         };
-
+// ... existing code ... -->
         async function loadDataFromSupabase() {
             if (!supabaseClient) return false;
             try {
+                const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
+                if (!accErr && Array.isArray(accData) && accData.length > 0) {
+                    appState.accounts = accData.map(a => ({
+                        id: a.id,
+                        name: a.name || a.nome || 'Conta',
+                        type: a.type || a.tipo || 'Conta Bancária',
+                        initial_balance: Number(a.initial_balance || a.saldo_inicial || 0)
+                    }));
+                }
+
                 const { data, error } = await supabaseClient
                     .from('transactions')
                     .select('*')
@@ -559,15 +663,24 @@
 
                 if (!error && Array.isArray(data)) {
                     if (data.length > 0) {
-                        appState.transactions = data.map(item => ({
-                            id: item.id,
-                            dateCash: item.date || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]),
-                            desc: item.description || item.desc || 'Lançamento',
-                            category: item.category || 'Outros',
-                            account: item.account || 'Conta Principal',
-                            type: (item.type || (Number(item.amount) < 0 ? 'DESPESA' : 'RECEITA')).toUpperCase(),
-                            amount: Math.abs(Number(item.amount) || 0)
-                        }));
+                        const detectedAccs = new Set();
+                        appState.transactions = data.map(item => {
+                            const dCash = item.date || (item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0]);
+                            const accName = item.account || 'Conta Principal';
+                            detectedAccs.add(accName);
+                            return {
+                                id: item.id,
+                                dateCash: dCash,
+                                dateCompetence: item.competence_date || dCash,
+                                status: (item.status || 'REALIZADO').toUpperCase(),
+                                desc: item.description || item.desc || 'Lançamento',
+                                category: item.category || 'Outros',
+                                account: accName,
+                                type: (item.type || (Number(item.amount) < 0 ? 'DESPESA' : 'RECEITA')).toUpperCase(),
+                                amount: Math.abs(Number(item.amount) || 0)
+                            };
+                        });
+                        await ensureAccountsRegistered(Array.from(detectedAccs));
                         saveDataToStorage();
                     }
                     return true;
@@ -577,153 +690,12 @@
             }
             return false;
         }
-
-        window.deleteTransaction = async function(id) {
-            if (!confirm("Deseja realmente excluir este lançamento permanentemente?")) return;
-            appState.transactions = appState.transactions.filter(t => String(t.id) !== String(id));
-            saveDataToStorage();
-            await deleteTransactionFromSupabase(id);
-            renderDashboard();
-            renderAccountsTab();
-        };
-
-        // LEITURA OCR REAL DE NOTINHAS
-        window.handleScanImage = async function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const loadingBox = document.getElementById('scan-loading');
-            const statusText = document.getElementById('scan-status-text');
-            const progressBar = document.getElementById('scan-progress-bar');
-            const reviewForm = document.getElementById('scan-review-form');
-            const uploadBox = document.getElementById('scan-upload-box');
-
-            uploadBox.classList.add('hidden');
-            loadingBox.classList.remove('hidden');
-            reviewForm.classList.add('hidden');
-            statusText.innerText = "Processando imagem da nota fiscal...";
-            progressBar.style.width = "25%";
-
-            try {
-                if (!window.Tesseract) throw new Error("OCR indisponível.");
-
-                const result = await Tesseract.recognize(file, 'por', {
-                    logger: m => {
-                        if (m.status === 'recognizing text') {
-                            const pct = Math.round(m.progress * 100);
-                            progressBar.style.width = `${Math.max(25, pct)}%`;
-                            statusText.innerText = `Lendo caracteres: ${pct}%`;
-                        }
-                    }
-                });
-
-                const text = result.data.text || '';
-                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-
-                let storeName = 'Cupom Fiscal';
-                for (let i = 0; i < Math.min(lines.length, 6); i++) {
-                    const line = lines[i];
-                    if (!line.toUpperCase().includes('CNPJ') && !line.toUpperCase().includes('DOCUMENTO') && line.length > 4) {
-                        storeName = line.replace(/[^a-zA-Z0-9À-ÿ\s\.\-&]/g, '').trim();
-                        if (storeName.length > 3) break;
-                    }
-                }
-
-                let detectedAmount = 0;
-                const totalKeywords = /(VALOR\s*A\s*PAGAR|VALOR\s*TOTAL|TOTAL\s*R\$|TOTAL\s*GERAL|CARTAO\s*DE\s*CREDITO|CARTAO\s*DE\s*DEBITO|VALOR\s*:)/i;
-                
-                for (let line of lines) {
-                    if (totalKeywords.test(line)) {
-                        const matches = line.match(/(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})/g);
-                        if (matches && matches.length > 0) {
-                            const rawNum = matches[matches.length - 1].replace(/\./g, '').replace(',', '.');
-                            const val = parseFloat(rawNum);
-                            if (!isNaN(val) && val > 0) {
-                                detectedAmount = val;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if (detectedAmount === 0) {
-                    const allMoney = text.match(/\b\d{1,4},\d{2}\b/g);
-                    if (allMoney) {
-                        const nums = allMoney.map(m => parseFloat(m.replace(',', '.'))).filter(n => !isNaN(n) && n < 50000);
-                        if (nums.length > 0) detectedAmount = Math.max(...nums);
-                    }
-                }
-
-                let detectedDate = new Date().toISOString().split('T')[0];
-                const dateMatch = text.match(/(\d{2})\/(\d{2})\/(20\d{2})/);
-                if (dateMatch) {
-                    detectedDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
-                }
-
-                let detectedAccount = 'Cartão de Crédito';
-                if (/DEBITO|DÉBITO/i.test(text)) detectedAccount = 'Cartão de Débito';
-                else if (/PIX/i.test(text)) detectedAccount = 'Pix / Conta Corrente';
-                else if (/DINHEIRO/i.test(text)) detectedAccount = 'Carteira';
-
-                document.getElementById('scan-amount').value = detectedAmount > 0 ? detectedAmount.toFixed(2) : '';
-                document.getElementById('scan-date').value = detectedDate;
-                document.getElementById('scan-desc').value = storeName;
-                document.getElementById('scan-account').value = detectedAccount;
-
-                loadingBox.classList.add('hidden');
-                reviewForm.classList.remove('hidden');
-
-            } catch (err) {
-                console.error("Erro OCR:", err);
-                loadingBox.classList.add('hidden');
-                document.getElementById('scan-date').value = new Date().toISOString().split('T')[0];
-                document.getElementById('scan-desc').value = 'Compra (Nota Fiscal)';
-                reviewForm.classList.remove('hidden');
-            }
-        };
-
-        window.confirmScanSave = async function(e) {
-            e.preventDefault();
-            const amount = parseFloat(document.getElementById('scan-amount').value);
-            const dateCash = document.getElementById('scan-date').value;
-            const desc = document.getElementById('scan-desc').value;
-            const category = document.getElementById('scan-category').value;
-            const account = document.getElementById('scan-account').value;
-
-            if (isNaN(amount) || amount <= 0) return;
-
-            const newTx = {
-                id: Date.now().toString(),
-                dateCash: dateCash || new Date().toISOString().split('T')[0],
-                desc: desc,
-                category: category,
-                account: account,
-                type: 'DESPESA',
-                amount: amount
-            };
-
-            const dbId = await saveTransactionToSupabase(newTx);
-            if (dbId) newTx.id = dbId;
-
-            appState.transactions.unshift(newTx);
-            saveDataToStorage();
-            closeModal('scanModal');
-            renderDashboard();
-            renderAccountsTab();
-        };
-
-        // IMPORTAÇÃO MINHAS ECONOMIAS
-        window.processMinhasEconomiasFile = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-            const reader = new FileReader();
-
+// ... existing code ... -->
             const parseGenericRows = (matrixRows) => {
-                if (!matrixRows || matrixRows.length === 0) return { items: [], total: 0 };
+                if (!matrixRows || matrixRows.length === 0) return { items: [], total: 0, accounts: [] };
                 let parsedItems = [];
                 let totalCalc = 0;
+                const foundAccounts = new Set();
 
                 let headerIndex = -1;
                 for (let r = 0; r < Math.min(matrixRows.length, 25); r++) {
@@ -749,7 +721,7 @@
                         let headerName = headersMap[key];
                         if (keywords.some(kw => headerName.includes(kw))) {
                             let val = row[key];
-                            if (val !== undefined && val !== null && val !== '') return val;
+                            if (val !== undefined && val !== null && String(val).trim() !== '') return val;
                         }
                     }
                     return '';
@@ -760,11 +732,11 @@
                     if (!row) continue;
 
                     let rawDate = getRowVal(row, ['data', 'date', 'vencimento', 'dt']);
-                    let rawDesc = getRowVal(row, ['descri', 'desc', 'historico', 'titulo', 'nome', 'lancamento']);
+                    let rawDesc = getRowVal(row, ['descri', 'desc', 'historico', 'histórico', 'titulo', 'título', 'nome', 'lancamento', 'lançamento']);
                     let rawCat = getRowVal(row, ['categoria', 'cat', 'subcategoria']);
-                    let rawAcc = getRowVal(row, ['conta', 'card', 'cartao', 'banco']);
-                    let rawType = getRowVal(row, ['tipo', 'natureza', 'situacao', 'status']);
-                    let rawVal = getRowVal(row, ['valor', 'val', 'amount', 'preco', 'quantia', 'total']);
+                    let rawAcc = getRowVal(row, ['conta', 'cartão', 'cartao', 'card', 'carteira', 'banco', 'institui', 'pagamento']);
+                    let rawType = getRowVal(row, ['tipo', 'natureza', 'situacao', 'situação', 'status']);
+                    let rawVal = getRowVal(row, ['valor', 'val', 'amount', 'preco', 'preço', 'quantia', 'total']);
 
                     if (!rawVal && Array.isArray(row)) {
                         for (let v of row) {
@@ -812,22 +784,28 @@
                         }
                     }
 
+                    const accountName = String(rawAcc || 'Conta Principal').trim();
+                    foundAccounts.add(accountName);
+
                     parsedItems.push({
                         id: (Date.now() + i).toString(),
                         dateCash: dateStr,
+                        dateCompetence: dateStr,
+                        status: 'REALIZADO',
                         desc: String(rawDesc || 'Lançamento Importado').trim(),
                         category: String(rawCat || 'Outros').trim(),
-                        account: String(rawAcc || 'Conta Principal').trim(),
+                        account: accountName,
                         type: type,
                         amount: amount
                     });
                 }
-                return { items: parsedItems, total: totalCalc };
+                return { items: parsedItems, total: totalCalc, accounts: Array.from(foundAccounts) };
             };
 
             const handleParsedResult = (rows) => {
-                const { items, total } = parseGenericRows(rows);
+                const { items, total, accounts } = parseGenericRows(rows);
                 pendingMeList = items;
+                pendingMeAccounts = accounts;
 
                 if (pendingMeList.length === 0) {
                     document.getElementById('me-summary-text').innerText = `⚠️ 0 lançamentos encontrados.`;
@@ -836,6 +814,7 @@
                 }
 
                 document.getElementById('me-summary-text').innerText = `✅ ${pendingMeList.length} lançamentos prontos para gravar!`;
+                document.getElementById('me-summary-accounts').innerText = `🏦 Contas detectadas (${accounts.length}): ${accounts.join(', ')}`;
                 document.getElementById('me-summary-balance').innerText = `Impacto líquido no saldo: R$ ${total.toFixed(2)}`;
                 document.getElementById('me-preview-summary').classList.remove('hidden');
                 
@@ -844,33 +823,14 @@
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 btn.classList.add('hover:bg-teal-700', 'shadow-md');
             };
-
-            if (isExcel) {
-                reader.onload = function(evt) {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    handleParsedResult(XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }));
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                reader.onload = function(evt) {
-                    const lines = evt.target.result.split('\n').filter(l => l.trim() !== '');
-                    let matrix = lines.map(line => {
-                        let delim = line.includes(';') ? ';' : (line.includes('\t') ? '\t' : ',');
-                        return line.split(delim).map(cell => cell.trim().replace(/^"|"$/g, ''));
-                    });
-                    handleParsedResult(matrix);
-                };
-                reader.readAsText(file);
-            }
-        };
-
+// ... existing code ... -->
         window.confirmMinhasEconomiasImport = async function() {
             if (!pendingMeList || pendingMeList.length === 0) return;
             const btn = document.getElementById('btn-confirm-me-import');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando no Supabase...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Gravando contas e lançamentos...`;
             btn.disabled = true;
+
+            await ensureAccountsRegistered(pendingMeAccounts);
 
             if (supabaseClient) {
                 const payload = pendingMeList.map(tx => ({
@@ -886,16 +846,12 @@
 
             appState.transactions = pendingMeList.concat(appState.transactions);
             saveDataToStorage();
-            
-            btn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Gravar no Banco de Produção`;
             closeModal('minhasEconomiasModal');
             renderDashboard();
             renderAccountsTab();
-            alert(`${pendingMeList.length} lançamentos gravados com sucesso no ambiente de produção!`);
-            pendingMeList = [];
         };
 
-        // TRANSFERÊNCIA
+        // TRANSFERÊNCIA (NEUTRA EM RECEITAS/DESPESAS CONFORME PROMPT MESTRE)
         window.handleSaveTransfer = async function(e) {
             e.preventDefault();
             const amount = parseFloat(document.getElementById('tr-amount').value);
@@ -905,23 +861,29 @@
 
             if (isNaN(amount) || amount <= 0) return;
 
+            await ensureAccountsRegistered([from, to]);
+
             const txOut = {
                 id: Date.now().toString() + '_out',
                 dateCash,
+                dateCompetence: dateCash,
+                status: 'REALIZADO',
                 desc: `Transferência enviada para ${to}`,
                 category: 'Transferência',
                 account: from,
-                type: 'DESPESA',
+                type: 'TRANSFERENCIA_SAIDA',
                 amount
             };
 
             const txIn = {
                 id: Date.now().toString() + '_in',
                 dateCash,
+                dateCompetence: dateCash,
+                status: 'REALIZADO',
                 desc: `Transferência recebida de ${from}`,
                 category: 'Transferência',
                 account: to,
-                type: 'RECEITA',
+                type: 'TRANSFERENCIA_ENTRADA',
                 amount
             };
 
@@ -939,17 +901,23 @@
         window.handleSaveTransaction = async function(e) {
             e.preventDefault();
             const type = document.getElementById('tx-type').value;
+            const status = document.getElementById('tx-status').value || 'REALIZADO';
             const amount = parseFloat(document.getElementById('tx-amount').value);
             const desc = document.getElementById('tx-desc').value.trim();
             const dateCash = document.getElementById('tx-date').value || new Date().toISOString().split('T')[0];
+            const dateCompetence = document.getElementById('tx-date-competence').value || dateCash;
             const category = document.getElementById('tx-category').value.trim() || 'Geral';
             const account = document.getElementById('tx-account').value.trim() || 'Conta Principal';
 
             if (isNaN(amount) || amount <= 0) return;
 
+            await ensureAccountsRegistered([account]);
+
             const newTx = {
                 id: Date.now().toString(),
                 dateCash,
+                dateCompetence,
+                status,
                 desc,
                 category,
                 account,
@@ -967,24 +935,33 @@
             renderAccountsTab();
         };
 
-        // RENDERIZAÇÃO CONTAS
+        // RENDERIZAÇÃO CONTAS (CONSIDERA CONTAS CADASTRADAS + CAIXA REALIZADO)
         function renderAccountsTab() {
             const grid = document.getElementById('accounts-grid');
             if (!grid) return;
 
             const accountBalances = {};
+            (appState.accounts || []).forEach(acc => {
+                accountBalances[acc.name] = {
+                    balance: Number(acc.initial_balance) || 0,
+                    count: 0,
+                    type: acc.type || 'Conta Bancária'
+                };
+            });
+
             appState.transactions.forEach(t => {
+                if ((t.status || 'REALIZADO') !== 'REALIZADO') return;
                 const acc = t.account || 'Conta Principal';
-                if (!accountBalances[acc]) accountBalances[acc] = { balance: 0, count: 0 };
+                if (!accountBalances[acc]) accountBalances[acc] = { balance: 0, count: 0, type: 'Conta Bancária' };
                 const amt = Number(t.amount) || 0;
-                if (t.type === 'RECEITA') accountBalances[acc].balance += amt;
+                if (t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA') accountBalances[acc].balance += amt;
                 else accountBalances[acc].balance -= amt;
                 accountBalances[acc].count++;
             });
 
             const names = Object.keys(accountBalances);
             if (names.length === 0) {
-                grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 glass-card rounded-xl">Nenhuma conta movimentada ainda. Importe seus dados ou adicione um lançamento.</div>`;
+                grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 glass-card rounded-xl">Nenhuma conta cadastrada ainda. Clique em "+ Nova Conta / Cartão" ou importe seus dados do Minhas Economias.</div>`;
                 return;
             }
 
@@ -994,8 +971,11 @@
                 return `
                     <div class="glass-card p-5 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="font-bold text-slate-800 text-sm">${escapeHtml(name)}</span>
-                            <i class="fa-solid fa-building-columns text-slate-400"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 text-sm block">${escapeHtml(name)}</span>
+                                <span class="text-[10px] text-slate-400 uppercase font-semibold">${escapeHtml(info.type)}</span>
+                            </div>
+                            <i class="fa-solid ${info.type.includes('Cartão') ? 'fa-credit-card text-indigo-500' : 'fa-building-columns text-emerald-600'} text-lg"></i>
                         </div>
                         <div>
                             <p class="text-[11px] text-slate-500 uppercase">Saldo Atual</p>
@@ -1117,28 +1097,45 @@
         }
 
         function renderDashboard() {
-            let total = 0, inc = 0, exp = 0;
+            let cashRealized = 0, cashProjected = 0, incCompetence = 0, expCompetence = 0;
             const categoryMap = {};
 
             appState.transactions.forEach(t => {
                 const amt = Number(t.amount) || 0;
-                if (t.type === 'RECEITA') { 
-                    inc += amt; 
-                    total += amt; 
-                } else { 
-                    exp += amt; 
-                    total -= amt; 
-                    const cat = t.category || 'Outros';
-                    categoryMap[cat] = (categoryMap[cat] || 0) + amt;
+                const status = (t.status || 'REALIZADO').toUpperCase();
+                const isTransfer = t.type.startsWith('TRANSFERENCIA');
+
+                // 1. Visão de Caixa (Realizado vs Projetado)
+                if (t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA') {
+                    cashProjected += amt;
+                    if (status === 'REALIZADO') cashRealized += amt;
+                } else {
+                    cashProjected -= amt;
+                    if (status === 'REALIZADO') cashRealized -= amt;
+                }
+
+                // 2. Visão de Competência (Ignora transferências para não inflar receitas/despesas)
+                if (!isTransfer) {
+                    if (t.type === 'RECEITA') { 
+                        incCompetence += amt; 
+                    } else { 
+                        expCompetence += amt; 
+                        const cat = t.category || 'Outros';
+                        categoryMap[cat] = (categoryMap[cat] || 0) + amt;
+                    }
                 }
             });
 
-            document.getElementById('dash-total-balance').innerText = `R$ ${total.toFixed(2)}`;
-            document.getElementById('dash-income').innerText = `R$ ${inc.toFixed(2)}`;
-            document.getElementById('dash-expense').innerText = `R$ ${exp.toFixed(2)}`;
+            const competenceBalance = incCompetence - expCompetence;
+
+            document.getElementById('dash-total-balance').innerText = `R$ ${cashRealized.toFixed(2)}`;
+            document.getElementById('dash-projected-cash').innerText = `R$ ${cashProjected.toFixed(2)}`;
+            document.getElementById('dash-competence-balance').innerText = `R$ ${competenceBalance.toFixed(2)}`;
+            document.getElementById('dash-income').innerText = `R$ ${incCompetence.toFixed(2)}`;
+            document.getElementById('dash-expense').innerText = `R$ ${expCompetence.toFixed(2)}`;
             document.getElementById('dash-count').innerText = `${appState.transactions.length} lançamentos`;
 
-            renderCharts(inc, exp, categoryMap);
+            renderCharts(incCompetence, expCompetence, categoryMap);
 
             const body = document.getElementById('dash-transactions-body');
             const fullBody = document.getElementById('full-transactions-body');
@@ -1148,24 +1145,33 @@
             if (fullBody) fullBody.innerHTML = '';
 
             if (!appState.transactions || appState.transactions.length === 0) {
-                const emptyRow = '<tr><td colspan="7" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado no banco de produção ainda.</td></tr>';
+                const emptyRow = '<tr><td colspan="9" class="p-6 text-center text-slate-400 italic">Nenhum lançamento registrado no banco de produção ainda.</td></tr>';
                 if (body) body.innerHTML = emptyRow;
                 if (fullBody) fullBody.innerHTML = emptyRow;
                 return;
             }
 
             appState.transactions.forEach((t, index) => {
-                const isInc = t.type === 'RECEITA';
+                const isInc = t.type === 'RECEITA' || t.type === 'TRANSFERENCIA_ENTRADA';
+                const isTransfer = t.type.startsWith('TRANSFERENCIA');
                 const numAmount = Number(t.amount) || 0;
+                const dComp = t.dateCompetence || t.dateCash;
+                const status = t.status || 'REALIZADO';
+                const badgeClass = isTransfer ? 'bg-amber-100 text-amber-800' : (isInc ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800');
+                const statusBadge = status === 'PREVISTO' ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800">PREVISTO</span>' : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">REALIZADO</span>';
                 
                 if (body && index < 10) {
                     body.innerHTML += `
                         <tr class="hover:bg-slate-50 border-b border-slate-100">
-                            <td class="p-3">${escapeHtml(t.dateCash)}</td>
+                            <td class="p-3">
+                                <div class="font-medium text-slate-800">Cx: ${escapeHtml(t.dateCash)}</div>
+                                <div class="text-[10px] text-teal-600">Comp: ${escapeHtml(dComp)}</div>
+                            </td>
                             <td class="p-3 font-semibold text-slate-800">${escapeHtml(t.desc)}</td>
                             <td class="p-3">${escapeHtml(t.category)}</td>
                             <td class="p-3">${escapeHtml(t.account)}</td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isInc ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${escapeHtml(t.type)}</span></td>
+                            <td class="p-3">${statusBadge}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${escapeHtml(t.type)}</span></td>
                             <td class="p-3 text-right font-bold ${isInc ? 'text-emerald-600' : 'text-slate-800'}">${isInc ? '+' : '-'} R$ ${numAmount.toFixed(2)}</td>
                         </tr>
                     `;
@@ -1180,10 +1186,12 @@
                     fullBody.innerHTML += `
                         <tr class="hover:bg-slate-50 border-b border-slate-100">
                             <td class="p-3">${escapeHtml(t.dateCash)}</td>
+                            <td class="p-3 text-teal-700 font-medium">${escapeHtml(dComp)}</td>
                             <td class="p-3 font-semibold text-slate-800">${escapeHtml(t.desc)}</td>
                             <td class="p-3">${escapeHtml(t.category)}</td>
                             <td class="p-3">${escapeHtml(t.account)}</td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isInc ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${escapeHtml(t.type)}</span></td>
+                            <td class="p-3">${statusBadge}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeClass}">${escapeHtml(t.type)}</span></td>
                             <td class="p-3 text-right font-bold ${isInc ? 'text-emerald-600' : 'text-slate-800'}">${isInc ? '+' : '-'} R$ ${numAmount.toFixed(2)}</td>
                             <td class="p-3 text-center">
                                 <button type="button" onclick="deleteTransaction('${escapeHtml(t.id)}')" class="text-rose-500 hover:text-rose-700 p-1" title="Excluir Lançamento">
