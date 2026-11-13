@@ -680,6 +680,14 @@
             if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span> Sincronizando Supabase...`;
 
             try {
+                // Testar conexão buscando a tabela transactions com limite 1
+                const { error: testErr } = await supabaseClient.from('transactions').select('id').limit(1);
+                if (testErr) {
+                    console.warn("Aviso de acesso Supabase:", testErr.message);
+                    if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo Local (Offline)`;
+                    return false;
+                }
+
                 // Carregar Contas
                 const { data: accData, error: accErr } = await supabaseClient.from('accounts').select('*');
                 if (!accErr && Array.isArray(accData) && accData.length > 0) {
@@ -717,8 +725,6 @@
                     }
                     if (badge) badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Supabase Conectado`;
                     return true;
-                } else if (error) {
-                    console.warn("Erro Supabase nas transações:", error.message);
                 }
             } catch(e) {
                 console.warn("Exceção ao conectar ao Supabase:", e);
@@ -735,7 +741,7 @@
             if (ok) {
                 alert("Conexão com o Supabase estabelecida com sucesso!");
             } else {
-                alert("Não foi possível conectar ao Supabase. Verifique se as tabelas 'transactions' e 'accounts' possuem políticas públicas (RLS) habilitadas no seu painel do Supabase.");
+                alert("Não foi possível conectar ao Supabase. Verifique se as tabelas 'transactions' e 'accounts' possuem permissão de acesso no painel do Supabase.");
             }
         };
 
